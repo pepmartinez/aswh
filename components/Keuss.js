@@ -3,9 +3,11 @@ var Log =   require ('winston-log-space');
 var async = require ('async');
 
 
-var MQ = require ('keuss/backends/mongo');
+var MQ =                  require ('keuss/backends/mongo');
+var signal_mongo_capped = require ('keuss/signal/mongo-capped');
+var stats_mongo =         require ('keuss/stats/mongo');
 
-var log = Log.logger ('Keuss');
+var log = Log.logger ('Components:Keuss');
 
 
 //////////////////////////////////////////////////////////////////
@@ -19,7 +21,16 @@ class Keuss {
   init (context, cb) {
     var keuss_factories_opts = {
       name: 'aswh',
-      url: this._opts.keuss.mongo_url
+      url: this._opts.keuss.mongo_url,
+      signaller: {
+        provider: signal_mongo_capped
+      },
+      stats: {
+        provider: stats_mongo,
+      },
+      deadletter: {
+        max_ko: 13
+      }
     };
 
     async.series([

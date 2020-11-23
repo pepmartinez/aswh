@@ -66,40 +66,14 @@ Log.init (err => {
 
 /*
 
-// use simple mongodb backend, mongo stats, mongo signal
-var MQ =                  require ('../../backends/mongo');
-var signal_mongo_capped = require ('../../signal/mongo-capped');
-var stats_mongo =         require ('../../stats/mongo');
 
 const App =      require ('./app');
 const consumer = require ('./consumer');
 
 
-var factory_opts = {
-  url: 'mongodb://localhost/keuss_webhooks',
-  signaller: {
-    provider: signal_mongo_capped,
-    opts: {
-      url: 'mongodb://localhost/keuss_webhooks_signal',
-      channel: 'webhooks_channel'
-    }
-  },
-  stats: {
-    provider: stats_mongo,
-    opts: {
-      url: 'mongodb://localhost/keuss_webhooks_stats'
-    }
-  },
-  deadletter: {
-    max_ko: 13
-  }
-};
 
-// initialize factory
-MQ (factory_opts, (err, factory) => {
-  if (err) return console.error (err);
 
-  console.log ('keuss initialized');
+
 
   // factory ready, create queue
   const q = factory.queue ('webhook_default_queue', {});

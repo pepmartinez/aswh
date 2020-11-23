@@ -6,6 +6,7 @@ const log = Log.logger ('Components:init');
 
 const components = [
   'Keuss',
+  'Consumer'
 ];
 
 function init (context, cb) {
