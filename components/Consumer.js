@@ -1,4 +1,6 @@
-const Log = require ('winston-log-space');
+const Log =   require ('winston-log-space');
+const _ =     require ('lodash');
+const async = require ('async');
 
 const consumer = require ('../lib/consumer');
 
@@ -14,18 +16,26 @@ class Consumer {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   init (context, cb) {
-    this._q = context.MQ.queue ('webhook_default_queue', {});
-    context.q = this._q;
+    this._context = context;
+    _.each (context.q, (q, qn) => {
+      consumer.run (q);
+    })
 
-    consumer (context);
     cb (null, this);
   }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   end (cb) {
-    this._q.cancel ();
-    this._q.drain (cb);
+    const tasks = [];
+    _.each (this._context.q, (q, qn) => {
+      tasks.push (cb => {
+        q.cancel ();
+        q.drain (cb);
+      });
+    });
+
+    async.series (tasks, cb);
   }
 }
 

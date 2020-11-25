@@ -11,9 +11,6 @@ Log.init (err => {
 
   const _defaults = {
     listen_port: 6677,
-    keuss: {
-      mongo_url: 'mongodb://localhost/aswh'
-    }
   };
 
   cconf
@@ -61,36 +58,4 @@ Log.init (err => {
     });
   });
 });
-
-
-
-/*
-
-
-const App =      require ('./app');
-const consumer = require ('./consumer');
-
-
-
-
-
-
-  // factory ready, create queue
-  const q = factory.queue ('webhook_default_queue', {});
-
-  //  create context and express app
-  let context = {factory, q};
-  context.app = App (context);
-
-  // listen for calls
-  context.app.listen (listen_port, err => {
-    if (err) return console.error (err);
-    console.log ('app listening at %s', listen_port);
-
-    // all set, read from queue
-    consumer (context);
-  });
-});
-
-*/
 

@@ -1,8 +1,19 @@
 
 module.exports = {
-  listen_port: 8095,
-  mongo: {
-    url: 'mongodb://localhost/mcu-reserve',
-    opts: { useUnifiedTopology: true }
+  listen_port: 6677,
+  keuss: {
+    base_url: 'mongodb://localhost/aswh',
+    opts: {
+      useUnifiedTopology: true
+    },
+    queue_groups: {
+      default: {
+        mq: 'simple',
+        queues: {
+          default: {
+          }
+        }
+      }
+    }
   }
 };
