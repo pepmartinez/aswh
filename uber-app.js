@@ -5,6 +5,53 @@ const Log =   require ('winston-log-space');
 const log = Log.logger ('main:uber-app');
 
 
+
+
+////////////////////////////////////////////////////////////
+function _do_ns_init (ns, context, cb) {
+  const NS = require (`./${ns}/init`);
+
+  NS.init (context, (err, res) => {
+    if (err) return cb (err);
+    context[ns] = res;
+    log.info ('%s initialized', ns);
+    cb ();
+  });
+}
+
+
+////////////////////////////////////////////////////////////
+function _do_ns_setup (ns, context, cb) {
+  var tasks = [];
+  _.each (context[ns], (v, k) => {
+    if (v.setup) {
+      tasks.push (cb => {
+        log.info ('setting up %s %s', ns, k);
+        v.setup (context, cb);
+      });
+    }
+  });
+
+  log.info ('setting up %s', ns);
+  async.series (tasks, cb);
+}
+
+
+////////////////////////////////////////////////////////////
+function _do_ns_end (ns, context, cb) {
+  var tasks = [];
+  _.each (context[ns], (v, k) => {
+    tasks.push (cb => {
+      log.info ('shutting down %s %s', ns, k);
+      v.end (cb);
+    });
+  });
+
+  log.info ('shutting down %s', ns);
+  async.series (tasks, cb);
+}
+
+
 ////////////////////////////////////////////////////////////////
 function __shutdown__ (context, doexit, cb) {
   log.info ('http server shutdown starts...');
@@ -26,49 +73,14 @@ function __shutdown__ (context, doexit, cb) {
         cb ();
       }
     },
-    cb => {
-      var tasks = [];
-      _.each (context.mw, (v, k) => {
-        tasks.push (cb => {
-          log.info ('shutting down middleware %s', k);
-          v.end (cb);
-        });
-      });
-
-      log.info ('shutting down middlewares');
-      async.series (tasks, cb);
-    },
-    cb => {
-      var tasks = [];
-      _.each (context.controllers, (v, k) => {
-        tasks.push (cb => {
-          log.info ('shutting down controller %s', k);
-          v.end (cb);
-        });
-      });
-
-      log.info ('shutting down controllers');
-      async.series (tasks, cb);
-    },
+    cb => _do_ns_end ('mw', context, cb),
+    cb => _do_ns_end ('controllers', context, cb),
+    cb => _do_ns_end ('components', context, cb),
     cb => {
       // stop promster
       if (context.promster) context.promster.register.clear();
       cb ();
-    },
-    cb => {
-      var tasks = [];
-      _.each (context.components, (v, k) => {
-        tasks.push (cb => {
-          log.info ('shutting down component %s', k);
-          v.end (cb);
-        });
-      });
-
-      log.info ('shutting down components');
-      async.series (tasks, cb);
     }
-
-
   ], () => {
     log.info ('instance clean-shutdown completed');
 //          require('active-handles').print();
@@ -84,44 +96,31 @@ function __shutdown__ (context, doexit, cb) {
 }
 
 
+////////////////////////////////////////////////////////////////
+function _init_metrics (context, cb) {
+  context.promster = context.app.locals.Prometheus;
+  context.metrics = {};
+
+  context.metrics.http_request_client = new context.promster.Histogram({
+    name: 'http_request_client',
+    help: 'HTTP requests as client',
+    buckets: [0.01, 0.1, 0.5, 1, 5, 10],
+    labelNames: ['status', 'dest']
+  });
+
+  log.info ('metrics initialized');
+  cb ();
+}
+
+
 /////////////////////////////////////////////////////////////////
 function uber_app (config, cb) {
   let context = {config};
 
   async.series ([
-    cb => {
-      // init components
-      var Components = require ('./components/init');
-
-      Components.init (context, (err, res) => {
-        if (err) return cb (err);
-        context.components = res;
-        log.info ('components initialized');
-        cb ();
-      });
-    },
-    cb => {
-      // init controllers
-      var Controllers = require ('./controllers/init');
-
-      Controllers.init (context, (err, res) => {
-        if (err) return cb (err);
-        context.controllers = res;
-        log.info ('controllers initialized');
-        cb ();
-      });
-    },
-    cb => {
-      // init middlewares
-      var MW = require ('./mw/init');
-
-      MW.init (context, (err, res) => {
-        if (err) return cb (err);
-        context.mw = res;
-        log.info ('middlewares initialized');
-        cb ();
-      });
-    },
+    cb => _do_ns_init ('components', context, cb),
+    cb => _do_ns_init ('controllers', context, cb),
+    cb => _do_ns_init ('mw', context, cb),
     cb => {
       // init app
       var App = require ('./app');
@@ -129,11 +128,14 @@ function uber_app (config, cb) {
       App (config, context, (err, app) => {
         if (err) return cb (err);
         context.app = app;
-        context.promster = context.app.locals.Prometheus;
         log.info ('app initialized');
         cb ();
       });
     },
+    cb => _init_metrics (context, cb),
+    cb => _do_ns_setup ('components', context, cb),
+    cb => _do_ns_setup ('controllers', context, cb),
+    cb => _do_ns_setup ('mw', context, cb),
   ], err => {
     context.shutdown = (doexit, cb) => __shutdown__ (context, doexit, cb);
     cb (err, context);
