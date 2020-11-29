@@ -1,9 +1,9 @@
 const express =    require ('express');
 const bodyParser = require ('body-parser');
-var promster =     require ('@promster/express');
-var morgan =       require ('morgan');
-var Log =          require ('winston-log-space');
-
+const promster =   require ('@promster/express');
+const morgan =     require ('morgan');
+const Log =        require ('winston-log-space');
+const path =       require ('path');
 
 module.exports = function  (opts, context, done) {
   var log = Log.logger ('app');
@@ -29,7 +29,10 @@ module.exports = function  (opts, context, done) {
 
   // main server entry point: anything here is queued for async delivery
   app.all ('/wh', (req, res) => {
-    const url = req.headers['x-dest-url'];
+    const url =    req.headers['x-dest-url'];
+    const q_name = req.headers['x-queue'];
+    const q_ns =   req.headers['x-queue-ns'];
+
     let delay = 0;
 
     // we expect a header x-dest-url to specif the webhook's url
@@ -52,21 +55,23 @@ module.exports = function  (opts, context, done) {
     };
 
     // ...and queue it
-    context.q.push (pl, {delay: delay}, (err, id) => {
+    const q =
+    context.components.Keuss.queue(q_name, q_ns);
+    q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
-        console.error ('error whipe pushing payload:', err);
+        log.error ('error while pushing payload:', err);
         return res.status (500).send (err);
       }
 
       // no errors, return a 201 Created...
-      console.log ('inserted element with id %s', id);
-      return res.status (201).send ({res: 'ok', id: id});
+      log.verbose ('inserted element in queue %s@%s with id %s', q.name(), q.ns(), id);
+      return res.status (201).send ({res: 'ok', id: id, q: q.name(), ns: q.ns ()});
     });
   });
 
 
-  // test respnses for various http response codes
+  // test responses for various http response codes
   app.all ('/test/200', (req, res) => res.status (200).send ('a 200'));
   app.all ('/test/400', (req, res) => res.status (400).send ('a 400'));
   app.all ('/test/404', (req, res) => res.status (404).send ('a 404'));

@@ -17,8 +17,9 @@ class Consumer {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   init (context, cb) {
     this._context = context;
-    _.each (context.q, (q, qn) => {
+    _.each (context.components.Keuss.queues(), (q, qn) => {
       consumer.run (q);
+      log.info ('started consumer on queue %s@%s', q.name (), q.ns());
     })
 
     cb (null, this);
@@ -28,8 +29,9 @@ class Consumer {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   end (cb) {
     const tasks = [];
-    _.each (this._context.q, (q, qn) => {
+    _.each (this._context.components.Keuss.queues(), (q, qn) => {
       tasks.push (cb => {
+        log.info ('stopping consumer on queue %s@%s', q.name (), q.ns());
         q.cancel ();
         q.drain (cb);
       });

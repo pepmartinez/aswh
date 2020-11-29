@@ -2,13 +2,9 @@ var _ =     require('lodash');
 var Log =   require ('winston-log-space');
 var async = require ('async');
 
-
 var MQ_simple = require ('keuss/backends/mongo');
 var MQ_tape =   require ('keuss/backends/ps-mongo');
 var MQ_bucket = require ('keuss/backends/bucket-mongo-safe');
-
-var signal_mongo_capped = require ('keuss/signal/mongo-capped');
-var stats_mongo =         require ('keuss/stats/mongo');
 
 var log = Log.logger ('Components:Keuss');
 
@@ -29,15 +25,8 @@ class Keuss {
 
     _.each (this._opts.keuss.queue_groups, (qg, qg_name)  => {
       var keuss_factories_opts = {
-        name: `aswh_${qg_name}`,
+        name: qg_name,
         url: `${this._opts.keuss.base_url}_${qg_name}`,
-        opts: this._opts.keuss.opts,
-        signaller: {
-          provider: signal_mongo_capped
-        },
-        stats: {
-          provider: stats_mongo,
-        },
         deadletter: {
           max_ko: 13
         }
@@ -64,8 +53,6 @@ class Keuss {
       cb => async.series(tasks_mq, cb),
       cb => async.series(tasks_q, cb),
     ], err => {
-      context.mq = this._factories;
-      context.q = this._queues;
       cb (err, this);
     });
   }
@@ -81,6 +68,26 @@ class Keuss {
     cb ();
   }
 
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  queues (name, ns) {
+    return this._queues;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  queue (name, ns) {
+    ns = ns || 'default';
+    name = name || 'default';
+
+    const k = name + '@' + ns;
+    const q = this._queues[k];
+
+    if (q) return q;
+
+    // use default
+    return this._queues[name + '@' + ns];
+  }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

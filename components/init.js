@@ -17,12 +17,18 @@ function init (context, cb) {
   log.info ('initializing components');
 
   _.each (components, component_name => {
+    if (!context.components) context.components = {};
+
     const component = new (require ('./' + component_name)) (config, context, components_store);
     log.info ('created [%s]', component_name);
 
     components_store[component_name] = component;
     tasks[component_name] = cb => component.init (context, (err, who) => {
-      if (!err) log.info ('initialized [%s] OK', component_name);
+      if (!err) {
+        context.components[component_name] = who;
+        log.info ('initialized [%s] OK', component_name);
+      }
+
       cb (err, who);
     });
   });
