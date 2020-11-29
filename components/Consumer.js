@@ -11,6 +11,7 @@ var log = Log.logger ('Components:Consumer');
 class Consumer {
   constructor (opts) {
     this._opts = opts || {};
+    this._clients =  {};
   }
 
 
@@ -18,7 +19,7 @@ class Consumer {
   init (context, cb) {
     this._context = context;
     _.each (context.components.Keuss.queues(), (q, qn) => {
-      consumer.run (q);
+      this._clients[qn] = new consumer (q, context);
       log.info ('started consumer on queue %s@%s', q.name (), q.ns());
     })
 
@@ -29,6 +30,10 @@ class Consumer {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   setup (context, cb) {
     this._http_req_cl_metric = context.metrics.http_request_client;
+    _.each (this._clients, (v, k) => {
+      log.info ('starting consumer on %s', k);
+      v.run ();
+    });
     cb ();
   }
 
@@ -36,12 +41,8 @@ class Consumer {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   end (cb) {
     const tasks = [];
-    _.each (this._context.components.Keuss.queues(), (q, qn) => {
-      tasks.push (cb => {
-        log.info ('stopping consumer on queue %s@%s', q.name (), q.ns());
-        q.cancel ();
-        q.drain (cb);
-      });
+    _.each (this._clients, v => {
+      tasks.push (cb => v.stop (cb));
     });
 
     async.series (tasks, cb);
