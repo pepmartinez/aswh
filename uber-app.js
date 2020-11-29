@@ -105,7 +105,7 @@ function _init_metrics (context, cb) {
     name: 'http_request_client',
     help: 'HTTP requests as client',
     buckets: [0.01, 0.1, 0.5, 1, 5, 10],
-    labelNames: ['status', 'dest']
+    labelNames: ['proto', 'method', 'dest', 'status']
   });
 
   log.info ('metrics initialized');

@@ -19,7 +19,7 @@ class Consumer {
   init (context, cb) {
     this._context = context;
     _.each (context.components.Keuss.queues(), (q, qn) => {
-      this._clients[qn] = new consumer (q, context);
+      this._clients[qn] = new consumer (q, this);
       log.info ('started consumer on queue %s@%s', q.name (), q.ns());
     })
 
