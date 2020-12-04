@@ -18,9 +18,11 @@ class Consumer {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   init (context, cb) {
     this._context = context;
+    this._http_agents = context.components.HttpAgents;
+
     _.each (context.components.Keuss.queues(), (q, qn) => {
       this._clients[qn] = new consumer (q, this);
-      log.info ('started consumer on queue %s@%s', q.name (), q.ns());
+      log.info ('created consumer on queue %s@%s', q.name (), q.ns());
     })
 
     cb (null, this);
@@ -31,8 +33,8 @@ class Consumer {
   setup (context, cb) {
     this._http_req_cl_metric = context.metrics.http_request_client;
     _.each (this._clients, (v, k) => {
-      log.info ('starting consumer on %s', k);
       v.run ();
+      log.info ('started consumer on queue %s', k);
     });
     cb ();
   }

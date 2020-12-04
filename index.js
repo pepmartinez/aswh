@@ -11,6 +11,26 @@ Log.init (err => {
 
   const _defaults = {
     listen_port: 6677,
+    agents: {
+      http: {
+        default : {
+          keepAlive: true,
+          keepAliveMsecs: 10000,
+          maxSockets: 1024,
+          maxFreeSockets: 256,
+          timeout: 120000
+        }
+      },
+      https: {
+        default : {
+          keepAlive: true,
+          keepAliveMsecs: 10000,
+          maxSockets: 1024,
+          maxFreeSockets: 256,
+          timeout: 120000
+        }
+      },
+    },
   };
 
   cconf

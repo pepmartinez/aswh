@@ -51,7 +51,7 @@ module.exports = function  (opts, context, done) {
       url: url,
       method: req.method,
       headers: req.headers,
-      body: req.body
+      body: req.body  // TODO check no body produces {}
     };
 
     // ...and queue it

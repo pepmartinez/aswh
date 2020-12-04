@@ -5,6 +5,7 @@ const Log =   require ('winston-log-space');
 const log = Log.logger ('Components:init');
 
 const components = [
+  'HttpAgents',
   'Keuss',
   'Consumer'
 ];
