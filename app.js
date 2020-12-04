@@ -51,12 +51,11 @@ module.exports = function  (opts, context, done) {
       url: url,
       method: req.method,
       headers: req.headers,
-      body: req.body  // TODO check no body produces {}
+      body: req.headers['content-length'] ? req.body : null
     };
 
     // ...and queue it
-    const q =
-    context.components.Keuss.queue(q_name, q_ns);
+    const q = context.components.Keuss.queue(q_name, q_ns);
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
