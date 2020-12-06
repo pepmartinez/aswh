@@ -1,0 +1,42 @@
+version: '3'
+
+#
+# run with
+# docker-compose up --exit-code-from blackboxtest --build --abort-on-container-exit && docker-compose logs blackboxtest && docker-compose down
+#
+services:
+  aswh:
+    build:
+      context: ../
+      dockerfile: ./Dockerfile
+    restart: on-failure
+    environment:
+      - NODE_ENV=blackboxtest
+    volumes:
+      - ./aswh-etc:/usr/src/app/etc
+    depends_on:
+      - mongo
+
+  tests:
+#    build:
+#      context: ./
+#      dockerfile: ./Dockerfile
+#    depends_on:
+#      - mongo
+
+    image: node:14.15.1-alpine
+    command: tail -f /dev/null
+    volumes:
+      - ./:/usr/src/app
+
+
+  mongo:
+    image: mongo:4.4.2-bionic
+    command: --logpath /dev/null
+    restart: on-failure
+    ports:
+      - 37017:27017
+
+networks:
+  default:
+
