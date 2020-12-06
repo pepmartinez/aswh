@@ -46,12 +46,16 @@ module.exports = function  (opts, context, done) {
     }
 
     // build the payload...
+    const cl = req.headers['content-length'];
+    delete req.headers['host'];
+    delete req.headers['content-length'];
+    delete req.headers['connection'];
     delete req.headers['x-dest-url'];
     const pl = {
       url: url,
       method: req.method,
       headers: req.headers,
-      body: req.headers['content-length'] ? req.body : null
+      body: cl ? req.body : null
     };
 
     // ...and queue it
