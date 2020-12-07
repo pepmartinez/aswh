@@ -10,6 +10,16 @@ Log.init (err => {
   const  cconf = new CConf ();
 
   const _defaults = {
+    defaults: {
+      retries: {
+        max: 5,
+        delay: {
+          c0: 3,
+          c1: 3,
+          c2: 3
+        }
+      }
+    },
     listen_port: 6677,
     agents: {
       http: {

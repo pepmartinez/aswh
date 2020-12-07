@@ -38,7 +38,7 @@ module.exports = {
     client.connect ((err, cl) => {
       if (err) return cb (err);
       cl.db ().collection(coll).find (q).toArray ((err, docs) => {
-        console.log (`got coll ${coll} on ${uri} with query`, q, ':',  docs)
+//        console.log (`got coll ${coll} on ${uri} with query`, q, ':',  docs);
         cl.close (() => cb (err, docs));
       });
     });

@@ -21,7 +21,19 @@ class Consumer {
     this._http_agents = context.components.HttpAgents;
 
     _.each (context.components.Keuss.queues(), (q, qn) => {
-      this._clients[qn] = new consumer (q, this);
+      const q_config = this._opts.keuss.queue_groups[q.ns()].queues[q.name()];
+      const opts = {
+        window: q_config.window,
+        retry: {
+          delay: {
+            c0: _.get (q_config, 'retry.delay.c0'),
+            c1: _.get (q_config, 'retry.delay.c1'),
+            c2: _.get (q_config, 'retry.delay.c2'),
+          }
+        }
+      };
+
+      this._clients[qn] = new consumer (q, this, opts);
       log.info ('created consumer on queue %s@%s', q.name (), q.ns());
     })
 
