@@ -24,14 +24,17 @@ describe ('blackbox tests, phase I', () => {
   });
 
   beforeEach (done => {
+//    console.log ('beforeEach')
     done ();
   });
 
   afterEach (done => {
+//    console.log ('afterEach')
     if (app) {
       app_http.close (err => {
         app_http = null;
         app = null;
+//        console.log ('afterEach app down')
         done (err);
       });
     }
@@ -50,10 +53,13 @@ describe ('blackbox tests, phase I', () => {
   });
 
 
-  it ('forwards a GET ok', done => {
+  [
+    'get',
+    'delete'
+  ].forEach (verb => it (`forwards a ${verb} ok`, done => {
     app = new express ();
     app.use (bodyParser.text ({type: () => true}));
-    app.get ('/this/is/the/path', (req, res) => {
+    app[verb] ('/this/is/the/path', (req, res) => {
       res.send ('ok');
 
       req.headers.should.match ({
@@ -64,12 +70,15 @@ describe ('blackbox tests, phase I', () => {
 
       req.query.should.eql ({a: '1', bb: 'ww'});
 
-      done ();
+      tools.getQueueContents ('default', 'default', (err, res) => {
+        res.should.eql([]);
+        done ();
+      });
     });
 
     app_http = app.listen (36677, () => {
       request (cfg.aswh.base_url)
-      .get(cfg.aswh.api_path)
+      [verb](cfg.aswh.api_path)
       .set ({
         'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
         a_a_a: '123',
@@ -84,58 +93,20 @@ describe ('blackbox tests, phase I', () => {
           q: 'default',
           ns: 'default'
         });
+
       });
     });
-  });
+  }));
 
 
-  it ('forwards a json PUT ok', done => {
+  [
+    'post',
+    'put',
+    'patch'
+  ].forEach (verb => it (`forwards a text ${verb} ok`, done => {
     app = new express ();
     app.use (bodyParser.text ({type: () => true}));
-    app.put ('/this/is/the/path', (req, res) => {
-      res.send ('ok');
-
-      req.headers.should.match ({
-        host: 'tests:36677',
-        a_a_a: '123',
-        b_b_b: 'qwe',
-        'content-type': 'application/json',
-        'content-length': '39'
-      });
-
-      req.query.should.eql ({a: '1', bb: 'ww'});
-      req.body.should.equal ('{"a":false,"b":4,"c":"qwe","d":{"a":1}}');
-
-      done ();
-    });
-
-    app_http = app.listen (36677, () => {
-      request (cfg.aswh.base_url)
-      .put(cfg.aswh.api_path)
-      .set ({
-        'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
-        a_a_a: '123',
-        b_b_b: 'qwe'
-      })
-      .send ({a: false, b: 4, c: 'qwe', d: {a: 1}})
-      .expect (201)
-      .end ((err, res) => {
-        if (err) return done (err);
-        res.body.should.match ({
-          res: 'ok',
-          id: /.+/,
-          q: 'default',
-          ns: 'default'
-        });
-      });
-    });
-  });
-
-
-  it ('forwards a text POST ok', done => {
-    app = new express ();
-    app.use (bodyParser.text ({type: () => true}));
-    app.post ('/this/is/the/path', (req, res) => {
+    app[verb] ('/this/is/the/path', (req, res) => {
       res.send ('ok');
 
       req.headers.should.match ({
@@ -149,12 +120,15 @@ describe ('blackbox tests, phase I', () => {
       req.query.should.eql ({a: '1', bb: 'ww'});
       req.body.should.equal ('qwertyuiop');
 
-      done ();
+      tools.getQueueContents ('default', 'default', (err, res) => {
+        res.should.eql([]);
+        done ();
+      });
     });
 
     app_http = app.listen (36677, () => {
       request (cfg.aswh.base_url)
-      .post (cfg.aswh.api_path)
+      [verb] (cfg.aswh.api_path)
       .set ({
         'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
         a_a_a: '123',
@@ -173,8 +147,7 @@ describe ('blackbox tests, phase I', () => {
         });
       });
     });
-  });
-
+  }));
 
 
 });

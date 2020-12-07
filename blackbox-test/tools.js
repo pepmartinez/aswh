@@ -4,6 +4,8 @@ const async =   require ('async');
 const request = require ('supertest');
 const _ =       require ('lodash');
 
+const cfg = require ('./config');
+
 
 module.exports = {
   waitforit: function (url, opts, done) {
@@ -36,6 +38,7 @@ module.exports = {
     client.connect ((err, cl) => {
       if (err) return cb (err);
       cl.db ().collection(coll).find (q).toArray ((err, docs) => {
+        console.log (`got coll ${coll} on ${uri} with query`, q, ':',  docs)
         cl.close (() => cb (err, docs));
       });
     });
@@ -71,5 +74,10 @@ module.exports = {
       });
     });
   },
+
+
+  getQueueContents: function (type, queue, cb) {
+    this.getColl (cfg.keuss.base_url + '_' + type, queue, cb);
+  }
 
 };
