@@ -77,7 +77,7 @@ module.exports = {
 
 
   getQueueContents: function (type, queue, cb) {
-    this.getColl (cfg.keuss.base_url + '_' + type, queue, cb);
+    setTimeout (() => this.getColl (cfg.keuss.base_url + '_' + type, queue, cb), 1000);
   }
 
 };
