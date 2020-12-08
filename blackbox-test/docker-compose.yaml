@@ -12,6 +12,7 @@ services:
     restart: on-failure
     environment:
       - NODE_ENV=development
+      - LOG_level__default=warn
     volumes:
       - ./aswh-etc:/usr/src/app/etc
     depends_on:
