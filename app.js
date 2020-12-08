@@ -47,10 +47,15 @@ module.exports = function  (opts, context, done) {
 
     // build the payload...
     const cl = req.headers['content-length'];
+
+    // remove one-hop headers
     delete req.headers['host'];
     delete req.headers['content-length'];
     delete req.headers['connection'];
+    delete req.headers['transfer-encoding'];
+
     delete req.headers['x-dest-url'];
+
     const pl = {
       url: url,
       method: req.method,

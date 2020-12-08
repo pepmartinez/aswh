@@ -1,5 +1,5 @@
 {
-  "name": "blackboxtest-customer-profile",
+  "name": "blackbox-test",
   "version": "0.0.0",
   "dependencies": {},
   "devDependencies": {
