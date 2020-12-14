@@ -13,6 +13,7 @@ class Agents {
     this._agents_https = {};
   }
 
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   init (context, cb) {
     _.each (_.get (this._opts, 'agents.http', {}), (v, k) => {
@@ -68,6 +69,9 @@ class Agents {
 
   //////////////////////////////////////////////////////////////////
   get_by_url (url) {
+
+// TODO use something else
+
     if (url.match (/^http:/)) return this._http_default;
     if (url.match (/^https:/)) return this._https_default;
     return false;

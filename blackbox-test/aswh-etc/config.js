@@ -20,18 +20,36 @@ module.exports = {
         }
       },
       tape: {
+        max_retries: 2,
         mq: 'tape',
         queues: {
           default: {
+            window: 3,
+            retry: {
+              delay: {
+                c0: 1,
+                c1: 1,
+                c2: 1
+              }
+            }
           },
           extra: {
           }
         }
       },
       bucket: {
+        max_retries: 3,
         mq: 'bucket',
         queues: {
           default: {
+            window: 3,
+            retry: {
+              delay: {
+                c0: 1,
+                c1: 1,
+                c2: 1
+              }
+            }
           },
           extra: {
           }

@@ -65,6 +65,9 @@ module.exports = function  (opts, context, done) {
 
     // ...and queue it
     const q = context.components.Keuss.queue(q_name, q_ns);
+
+    log.debug ('queue query: %s:%s -> %s-%s', q_name, q_ns, q.name(), q.ns());
+
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {

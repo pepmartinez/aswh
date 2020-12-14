@@ -77,7 +77,29 @@ module.exports = {
 
 
   getQueueContents: function (type, queue, cb) {
-    setTimeout (() => this.getColl (cfg.keuss.base_url + '_' + type, queue, cb), 1000);
+    const uri = cfg.keuss.base_url + '_' + type;
+    let q;
+
+    switch (type) {
+      case 'tape':
+        q = {processed: {$exists: false}}
+        break;
+
+      default:
+        q = {};
+    }
+
+    setTimeout (() => this.getColl (uri, queue, q, (err, res) => {
+//      console.log ('read coll %s at %s -> %j', queue, uri, res);
+      if (type == 'bucket') {
+        let ret = [];
+        res.forEach (i => i.b.forEach (o => ret.push ({payload: o, tries: i.tries})));
+        cb (err, ret);
+      }
+      else  {
+        cb (err, res);
+      }
+    }), 1000);
   }
 
 };

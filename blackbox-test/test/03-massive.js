@@ -7,11 +7,16 @@ const bodyParser = require ('body-parser');
 
 const cfg =      require ('../config');
 const tools =    require ('../tools');
-const fixtures = require ('../fixtures');
 
+
+[
+  'default',
+  'tape',
+  'bucket'
+].forEach (mq => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-describe ('mass tests', () => {
+describe ('mass tests on queue NS ' + mq, () => {
   let app = null;
   let app_http = null;
 
@@ -66,7 +71,7 @@ describe ('mass tests', () => {
       req.query.should.eql ({a: '1', bb: 'ww'});
 
       if (received == 1000) {
-        tools.getQueueContents ('default', 'default', (err, res) => {
+        tools.getQueueContents (mq, 'default', (err, res) => {
           res.should.eql([]);
           done ();
         });
@@ -80,6 +85,7 @@ describe ('mass tests', () => {
         (n, next) => request (cfg.aswh.base_url)
           [verb](cfg.aswh.api_path)
           .set ({
+            'x-queue-ns': mq,
             'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
             a_a_a: '123',
             b_b_b: 'qwe'
@@ -93,5 +99,6 @@ describe ('mass tests', () => {
     });
   }));
 
+});
 
 });

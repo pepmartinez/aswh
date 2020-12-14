@@ -1,0 +1,2 @@
+* add per-queue, regex-upon-uri selection of agent, including false (no conn pool) as an option
+

@@ -5,13 +5,17 @@ const _ =       require ('lodash');
 const express = require ('express');
 const bodyParser = require ('body-parser');
 
-const cfg =      require ('../config');
-const tools =    require ('../tools');
-const fixtures = require ('../fixtures');
+const cfg =   require ('../config');
+const tools = require ('../tools');
 
+[
+  'default',
+  'tape',
+  'bucket'
+].forEach (mq => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-describe ('insertions & forwards 1-to-1', () => {
+describe ('insertions & forwards 1-to-1 on queue NS ' + mq, () => {
   let app = null;
   let app_http = null;
 
@@ -70,7 +74,7 @@ describe ('insertions & forwards 1-to-1', () => {
 
       req.query.should.eql ({a: '1', bb: 'ww'});
 
-      tools.getQueueContents ('default', 'default', (err, res) => {
+      tools.getQueueContents (mq, 'default', (err, res) => {
         res.should.eql([]);
         done ();
       });
@@ -80,6 +84,7 @@ describe ('insertions & forwards 1-to-1', () => {
       request (cfg.aswh.base_url)
       [verb](cfg.aswh.api_path)
       .set ({
+        'x-queue-ns': mq,
         'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
         a_a_a: '123',
         b_b_b: 'qwe'
@@ -91,7 +96,7 @@ describe ('insertions & forwards 1-to-1', () => {
           res: 'ok',
           id: /.+/,
           q: 'default',
-          ns: 'default'
+          ns: mq
         });
 
       });
@@ -120,7 +125,7 @@ describe ('insertions & forwards 1-to-1', () => {
       req.query.should.eql ({a: '1', bb: 'ww'});
       req.body.should.equal ('qwertyuiop');
 
-      tools.getQueueContents ('default', 'default', (err, res) => {
+      tools.getQueueContents (mq, 'default', (err, res) => {
         res.should.eql([]);
         done ();
       });
@@ -130,6 +135,7 @@ describe ('insertions & forwards 1-to-1', () => {
       request (cfg.aswh.base_url)
       [verb] (cfg.aswh.api_path)
       .set ({
+        'x-queue-ns': mq,
         'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
         a_a_a: '123',
         b_b_b: 'qwe'
@@ -143,11 +149,13 @@ describe ('insertions & forwards 1-to-1', () => {
           res: 'ok',
           id: /.+/,
           q: 'default',
-          ns: 'default'
+          ns: mq
         });
       });
     });
   }));
 
+
+});
 
 });
