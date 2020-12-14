@@ -32,6 +32,7 @@ module.exports = function  (opts, context, done) {
     const url =    req.headers['x-dest-url'];
     const q_name = req.headers['x-queue'];
     const q_ns =   req.headers['x-queue-ns'];
+    const agent =  req.headers['x-http-agent'];
 
     let delay = 0;
 
@@ -55,13 +56,19 @@ module.exports = function  (opts, context, done) {
     delete req.headers['transfer-encoding'];
 
     delete req.headers['x-dest-url'];
+    delete req.headers['x-queue'];
+    delete req.headers['x-queue-ns'];
+    delete req.headers['x-http-agent'];
 
     const pl = {
       url: url,
       method: req.method,
       headers: req.headers,
-      body: cl ? req.body : null
+      body: cl ? req.body : null,
+      xtra: {}
     };
+
+    if (agent) pl.xtra.agent = agent;
 
     // ...and queue it
     const q = context.components.Keuss.queue(q_name, q_ns);

@@ -68,12 +68,12 @@ class Agents {
 
 
   //////////////////////////////////////////////////////////////////
-  get_by_url (url) {
+  get_by_req (pl) {
+    if (pl.xtra.agent == 'none') return false;
+    const url = pl.url;
 
-// TODO use something else
-
-    if (url.match (/^http:/)) return this._http_default;
-    if (url.match (/^https:/)) return this._https_default;
+    if (url.match (/^http:/))  return this.get_http (pl.xtra.agent);
+    if (url.match (/^https:/)) return this.get_https (pl.xtra.agent);
     return false;
   }
 
