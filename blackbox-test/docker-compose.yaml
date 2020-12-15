@@ -26,7 +26,7 @@ services:
 #    image: node:14.15.1-alpine
 #    command: tail -f /dev/null
 #    volumes:
-#      - ./:/usr/src/app
+#      - ./:/app
 
     depends_on:
       - mongo
