@@ -53,15 +53,17 @@ You would need to first create a file `wh-payload.json` with the webhook payload
 
 * `etc/config-${NODE_ENV:-development}.js` file (optional)
 
+See `cascade-config` documentation on more details how to pass extra configuration (or override it) using environment variables or CLI args
+
 ## General
 
 * `listen_port`(defaults to 6677): port to listen to for incoming http
 
-* `defaults.**`: global defaults for `aswh`. They, in turn, default to:
+* `defaults.`: global defaults for `aswh`. They, in turn, default to:
   
   ```js
   defaults: {
-    retries: {
+    retry: {
       max: 5,
       delay: {
         c0: 3,
@@ -83,23 +85,40 @@ keuss: {
   // base mongodb url. All queue groups share the same server/cluster
   // but each one goes to a separated database whose name is created
   // by suffixing the db in base_url with '_$queue_group_name'
-  base_url: 'mongodb://localhost/aswh', 
+  base_url: 'mongodb://localhost/aswh',
   queue_groups: {
     qg_1: {
       // queue group named 'qg_1'. It will use the following databases:
       // mongodb://localhost/aswh_qg_1 : main data, queues
       // mongodb://localhost/aswh_qg_1_signal : keuss signaller
       // mongodb://localhost/aswh_qg_1_stats : keuss stats
-      
+
       // optional, defaults to 'default'
       mq: 'default' | 'tape' | 'bucket',
 
-      // maximum number of retries before moving elements to 
-      // __deadletter__ queue. defaults to defaults.retries.max or 5 
-      max_retries: <int>, 
+      // maximum number of retries before moving elements to
+      // __deadletter__ queue. defaults to defaults.retry.max or 5
+      max_retries: <int>,
 
       // queue definitions go here
       queues: {
+        default: {  // default queue, items for the group go here if no queue is specified
+          <opts>
+        },
+        q1: { // queue 'q1'
+          window: 3,  // consumer uses a window size of 3
+          retry: {
+            delay: { // c0, c1 and c2 values for retry delay
+              c0: 1,
+              c1: 1,
+              c2: 1
+            }
+          },
+          <opts>
+        },
+        q2: {
+          <opts>
+        },
         ...
       }
     },
@@ -110,16 +129,98 @@ keuss: {
 }
 ```
 
+Each queue has its own consumer to relay http requests; each consumer consists basically in a http client plus a loop with reserves elements from the queue, sends them and commits or rollbacks the elements on the queue depending on the http response
 
-
-each queue has its own consumer and http client for the relay
+The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the cosnumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
 
 ## HTTP agents
 
+Queue consumers can use http(s) agents, which allow for connection pooling. To do so, you need 2 steps: first, configure one or more HTTP agents 
+
+```js
+  agents: {
+    http: {
+      // standard node.js http agents
+      agent_a : {
+        keepAlive: true,
+        keepAliveMsecs: 10000,
+        maxSockets: 10,
+        maxFreeSockets: 2,
+        timeout: 12000
+      },
+      agent_b: {
+        ...
+      }
+    },
+    https: {
+      // standard node.js https agents
+      agent_z : {
+        keepAlive: true,
+        keepAliveMsecs: 10000,
+        maxSockets: 10,
+        maxFreeSockets: 2,
+        timeout: 12000
+      },
+      agent_other: {
+        ...  
+      },
+      agent_other_one: {
+        ...  
+      }
+    },
+  },
+```
+
+Both take the standard node.js http and https agents specified at [here](https://nodejs.org/dist/latest-v14.x/docs/api/http.html#http_class_http_agent) and [here](https://nodejs.org/dist/latest-v14.x/docs/api/https.html#https_class_https_agent). `agents.http` specify http agents to be used on `http://` target urls, `agents.https` specify agents for `https://` targets.
+
+The use of an agent is specified on a per-request basis, using the `x-http-agent`header; with the above config a request
+
+```js
+curl -v \
+  -H 'x-dest-url: https://alpha.omega/a/b' \
+  -H 'x-http-agent: agent_z' \
+  http://location_of_aswh/
+```
+
+would end up calling `https://alpha.omega/a/b` using the https agent configured at `agents.https.agent_z`
+
+If no agent is specified, no agent will be used; this would force `connection: close` upstream
+
 # Installation
 
-# Monitoring
+Easiest way is to use the docker image and mount your configuration:
 
-## Prometheus metrics
+```bash
+docker run \
+  --rm \
+  -d \
+  --name aswh \
+  -v /path/to/configuration/dir:/usr/src/app/etc \
+  - e NODE_ENV=development \
+  pepmartinez/aswh:1.0.0
+```
 
-## Keuss Prometheus metrics
+The configuration dir should must contain:
+
+* A base config file, `config.js`. This would contain common configuration
+
+* Zero or more per-env files, `config-${NODE_ENV}.js`, which would contain configuration specific for each `$NODE_ENV` 
+
+Also, configuration can be added or overriden using env vars:
+
+```bash
+docker run \
+  --rm \
+  -d \
+  --name aswh \
+  -v /path/to/configuration/dir:/usr/src/app/etc \
+  -e NODE_ENV=development \
+  -e defaults__retry__max=11 \ # this sets teh default for max retries to 11
+  pepmartinez/aswh:1.0.0
+```
+
+# Monitoring (Prometheus metrics)
+
+`aswh`uses [promster](https://github.com/tdeekens/promster) to maintain and provice `prometheus`metrics; along with the standard metrics provided by `promster`the following metrics are also provided:
+
+* `http_request_client`: histogram of client http requests, labelled with `protocol`, `http method`, `destination` (host:port) and `http status`

@@ -28,7 +28,7 @@ class Keuss {
         name: qg_name,
         url: `${this._opts.keuss.base_url}_${qg_name}`,
         deadletter: {
-          max_ko: qg.max_retries || this._opts.defaults.retries.max
+          max_ko: qg.max_retries || this._opts.defaults.retry.max
         }
       };
 

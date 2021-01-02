@@ -11,7 +11,7 @@ Log.init (err => {
 
   const _defaults = {
     defaults: {
-      retries: {
+      retry: {
         max: 5,
         delay: {
           c0: 3,
