@@ -22,6 +22,12 @@ class Consumer {
 
     _.each (context.components.Keuss.queues(), (q, qn) => {
       const q_config = this._opts.keuss.queue_groups[q.ns()].queues[q.name()];
+
+      if (!q_config) {
+        // not a consumable queue. __failed__, for example
+        return;
+      }
+
       const opts = {
         window: q_config.window,
         retry: {
@@ -33,7 +39,8 @@ class Consumer {
         }
       };
 
-      this._clients[qn] = new consumer (q, this, opts);
+      const failed_q = context.components.Keuss.queues() [`__failed__@${q.ns()}`];
+      this._clients[qn] = new consumer (q, {failed_q}, this, opts);
       log.info ('created consumer on queue %s@%s', q.name (), q.ns());
     })
 
