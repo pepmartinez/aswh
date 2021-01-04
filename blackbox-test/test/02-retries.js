@@ -51,8 +51,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
   [
     'get',
     'delete'
-  ].forEach (verb => it (`forwards a ${verb} ok, gets a 400, does not retry`, done => {
-    let tries = 0;
+  ].forEach (verb => it (`forwards a ${verb} ok, gets a 400, does not retry, element goes to __failed__`, done => {
     app = new express ();
     app.use (bodyParser.text ({type: () => true}));
     app[verb] ('/this/is/the/path', (req, res) => {
@@ -66,10 +65,24 @@ describe ('errors and retries on queue NS ' + mq, () => {
 
       req.query.should.eql ({a: '1', bb: 'ww'});
 
-      tools.getQueueContents (mq, 'default', (err, res) => {
-        res.should.eql([]);
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+        cb => tools.getQueueContents (mq, '__failed__', cb),
+        cb => tools.clearColl        (mq, '__failed__', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        res[1].should.eql([]);
+        res[2].map (i => i.payload).should.match ([{
+          url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+          method: verb.toUpperCase (),
+          headers: {a_a_a: '123', b_b_b: 'qwe'},
+          body: null,
+          xtra: {}
+        }]);
         done ();
       });
+
     });
 
     app_http = app.listen (36677, () => {
@@ -90,7 +103,6 @@ describe ('errors and retries on queue NS ' + mq, () => {
           q: 'default',
           ns: mq
         });
-
       });
     });
   }));
@@ -115,22 +127,42 @@ describe ('errors and retries on queue NS ' + mq, () => {
 
       req.query.should.eql ({a: '1', bb: 'ww'});
 
-      tools.getQueueContents (mq, 'default', (err, res) => {
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+        cb => tools.getQueueContents (mq, '__failed__', cb),
+        cb => tools.getQueueContents (mq, '__deadletter__', cb),
+        cb => tools.clearColl        (mq, '__failed__', cb),
+        cb => tools.clearColl        (mq, '__deadletter__', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        const q_cnt = res[1].map (i => i.payload);
+        const fl_cnt = res[2].map (i => i.payload);
+        const dl_cnt = res[3].map (i => i.payload);
+
+        fl_cnt.should.eql([]);
+
         if (tries <= 3) {
-          res.should.match([{
-            payload: {
-              url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
-              headers: {
-                a_a_a: '123',
-                b_b_b: 'qwe'
-              },
-              body: null
+          dl_cnt.should.eql([]);
+          q_cnt.should.match([{
+            url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+            headers: {
+              a_a_a: '123',
+              b_b_b: 'qwe'
             },
-            tries: tries
+            body: null
           }]);
         }
         else {
-          res.should.eql([]);
+          q_cnt.should.eql([]);
+          dl_cnt.should.match([{
+            url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+            headers: {
+              a_a_a: '123',
+              b_b_b: 'qwe'
+            },
+            body: null
+          }]);
           done ();
         }
       });
@@ -164,7 +196,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
     'post',
     'put',
     'patch'
-  ].forEach (verb => it (`forwards a text ${verb} ok, gets a 400, does not retry`, done => {
+  ].forEach (verb => it (`forwards a text ${verb} ok, gets a 400, does not retry, element goes to __failed__`, done => {
     app = new express ();
     app.use (bodyParser.text ({type: () => true}));
     app[verb] ('/this/is/the/path', (req, res) => {
@@ -181,8 +213,21 @@ describe ('errors and retries on queue NS ' + mq, () => {
       req.query.should.eql ({a: '1', bb: 'ww'});
       req.body.should.equal ('qwertyuiop');
 
-      tools.getQueueContents (mq, 'default', (err, res) => {
-        res.should.eql([]);
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+        cb => tools.getQueueContents (mq, '__failed__', cb),
+        cb => tools.clearColl        (mq, '__failed__', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        res[1].should.eql([]);
+        res[2].map (i => i.payload).should.match ([{
+          url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+          method: verb.toUpperCase (),
+          headers: {a_a_a: '123', b_b_b: 'qwe'},
+          body: 'qwertyuiop',
+          xtra: {}
+        }]);
         done ();
       });
     });
@@ -236,23 +281,44 @@ describe ('errors and retries on queue NS ' + mq, () => {
       req.query.should.eql ({a: '1', bb: 'ww'});
       req.body.should.equal ('qwertyuiop');
 
-      tools.getQueueContents (mq, 'default', (err, res) => {
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+        cb => tools.getQueueContents (mq, '__failed__', cb),
+        cb => tools.getQueueContents (mq, '__deadletter__', cb),
+        cb => tools.clearColl        (mq, '__failed__', cb),
+        cb => tools.clearColl        (mq, '__deadletter__', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        const q_cnt = res[1].map (i => i.payload);
+        const fl_cnt = res[2].map (i => i.payload);
+        const dl_cnt = res[3].map (i => i.payload);
+
+        fl_cnt.should.eql([]);
+
         if (tries <= 3) {
-          res.should.match([{
-            payload: {
-              url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
-              headers: {
-                a_a_a: '123',
-                b_b_b: 'qwe',
-                'content-type': 'text/plain',
-              },
-              body: 'qwertyuiop'
+          dl_cnt.should.eql([]);
+          q_cnt.should.match([{
+            url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+            headers: {
+              a_a_a: '123',
+              b_b_b: 'qwe',
+              'content-type': 'text/plain',
             },
-            tries: tries
+            body: 'qwertyuiop'
           }]);
         }
         else {
-          res.should.eql([]);
+          q_cnt.should.eql([]);
+          dl_cnt.should.match([{
+            url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+            headers: {
+              a_a_a: '123',
+              b_b_b: 'qwe',
+              'content-type': 'text/plain',
+            },
+            body: 'qwertyuiop'
+          }]);
           done ();
         }
       });

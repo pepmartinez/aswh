@@ -44,7 +44,18 @@ module.exports = {
     });
   },
 
-  clearColls: function (uri, cb) {
+  clearColl: function (type, coll, cb) {
+    const uri = cfg.keuss.base_url + '_' + type;
+    const client = new MongoClient (uri, { useUnifiedTopology: true });
+    client.connect ((err, cl) => {
+      if (err) return cb (err);
+      cl.db ().collection(coll).deleteMany ({}, () => cl.close (cb));
+    });
+  },
+
+
+  clearColls: function (type, cb) {
+    const uri = cfg.keuss.base_url + '_' + type;
     const client = new MongoClient (uri, { useUnifiedTopology: true });
     client.connect ((err, cl) => {
       if (err) return cb (err);
