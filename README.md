@@ -23,7 +23,7 @@ Generally speaking, `aswh` works for any HTTP request, not just webhooks, with t
 * You make HTTP calls (any method) to `http://localhost:6677/wh`. The whole HTTP request will be queued for later. You'll receive a `HTTP 201 Created` response, immediately after successful queuing
 * The queued requests are extracted by means of a reserve (they are not immediately removed, but marked as taken) from the queue and forwarded. The destination uri must be specified as the content of the `x-dest-url` header. The original uri, querystring included, is not used in the forwarding
   * If the request fails with a retriable error (http 5xx, non-http errors) it is rolled back (ie, marked as available again) with a delay of `tries^2 * c2 + tries * c1 + c0` seconds (those c0, c1, c2 default to 3 but are configurable).
-  * If the request fails with a non-retriable error (http 4xx) it is committed (ie, removed)
+  * If the request fails with a non-retriable error (http 4xx) it is committed (ie, removed) from the queue and moved to queue named `__failed__` inside the same keuss QM (that is, in the same mongodb database)
   * If they succeed (http 2xx) it is committed (ie, removed)
 * Also, deadletter is used. If a webhook is retried over 5 times (by default; it's configurable), it is moved to the queue `__deadletter__`
 
@@ -197,7 +197,7 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.0.0
+  pepmartinez/aswh:1.1.0
 ```
 
 The configuration dir should contain:
@@ -216,7 +216,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.0.0
+  pepmartinez/aswh:1.1.0
 ```
 
 ## Monitoring (Prometheus metrics)
