@@ -1,6 +1,12 @@
 {
   "name": "aswh",
-  "version": "1.1.0",
+  "description": "Asynchronous WebHook delivery, or generic store-and-forward HTTP proxy",
+  "version": "1.1.0",,
+  "keywords": [
+    "webhook",
+    "async",
+    "queue"
+  ],
   "homepage": "https://github.com/pepmartinez/aswh",
   "bugs": {
     "url": "https://github.com/pepmartinez/aswh/issues",
@@ -26,5 +32,8 @@
     "@promster/express": "~4.1.12",
     "prom-client": "~12.0.0",
     "morgan": "~1.10.0"
+  },
+  "bin": {
+    "aswh": "./index.js"
   }
 }
