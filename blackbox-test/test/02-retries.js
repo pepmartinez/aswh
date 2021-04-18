@@ -56,7 +56,6 @@ describe ('errors and retries on queue NS ' + mq, () => {
     app.use (bodyParser.text ({type: () => true}));
     app[verb] ('/this/is/the/path', (req, res) => {
       res.status (400).send ('ko');
-
       req.headers.should.match ({
         host: 'tests:36677',
         a_a_a: '123',
@@ -73,7 +72,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
       ], (err, res) => {
         if (err) return done (err);
         res[1].should.eql([]);
-        res[2].map (i => i.payload).should.match ([{
+        res[2].map (i => i.payload.__p ?  i.payload.__p :  i.payload).should.match ([{
           url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
           method: verb.toUpperCase (),
           headers: {a_a_a: '123', b_b_b: 'qwe'},
@@ -136,14 +135,15 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => tools.clearColl        (mq, '__deadletter__', cb),
       ], (err, res) => {
         if (err) return done (err);
-        const q_cnt = res[1].map (i => i.payload);
-        const fl_cnt = res[2].map (i => i.payload);
-        const dl_cnt = res[3].map (i => i.payload);
+        try {
+
+        const q_cnt =  res[1].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
+        const fl_cnt = res[2].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
+        const dl_cnt = res[3].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
 
         fl_cnt.should.eql([]);
 
-        if (tries <= 3) {
-          dl_cnt.should.eql([]);
+        if (dl_cnt.length == 0) {
           q_cnt.should.match([{
             url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
             headers: {
@@ -163,8 +163,10 @@ describe ('errors and retries on queue NS ' + mq, () => {
             },
             body: null
           }]);
+          console.log ('got to DL in %d tries', tries)
           done ();
         }
+      } catch (e) {return done(e)}
       });
     });
 
@@ -221,7 +223,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
       ], (err, res) => {
         if (err) return done (err);
         res[1].should.eql([]);
-        res[2].map (i => i.payload).should.match ([{
+        res[2].map (i =>  i.payload.__p ?  i.payload.__p :  i.payload).should.match ([{
           url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
           method: verb.toUpperCase (),
           headers: {a_a_a: '123', b_b_b: 'qwe'},
@@ -290,14 +292,14 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => tools.clearColl        (mq, '__deadletter__', cb),
       ], (err, res) => {
         if (err) return done (err);
-        const q_cnt = res[1].map (i => i.payload);
-        const fl_cnt = res[2].map (i => i.payload);
-        const dl_cnt = res[3].map (i => i.payload);
+
+        const q_cnt =  res[1].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
+        const fl_cnt = res[2].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
+        const dl_cnt = res[3].map (i => i.payload.__p ?  i.payload.__p :  i.payload);
 
         fl_cnt.should.eql([]);
 
-        if (tries <= 3) {
-          dl_cnt.should.eql([]);
+        if (dl_cnt.length == 0) {
           q_cnt.should.match([{
             url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
             headers: {
@@ -319,6 +321,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
             },
             body: 'qwertyuiop'
           }]);
+          console.log ('got to DL in %d tries', tries)
           done ();
         }
       });

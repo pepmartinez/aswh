@@ -1,7 +1,7 @@
 {
   "name": "aswh",
   "description": "Asynchronous WebHook delivery, or generic store-and-forward HTTP proxy",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "keywords": [
     "webhook",
     "async",
@@ -22,7 +22,7 @@
   },
   "license": "GPL-3.0",
   "dependencies": {
-    "keuss": "~1.6.1",
+    "keuss": "~1.6.3",
     "express": "~4.17.1",
     "body-parser": "~1.19.0",
     "superagent": "~6.1.0",

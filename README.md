@@ -60,7 +60,7 @@ See `cascade-config` documentation for more details on how to pass extra configu
 * `listen_port`(defaults to 6677): port to listen to for incoming http
 
 * `defaults.`: global defaults for `aswh`. They, in turn, default to:
-  
+
   ```js
   defaults: {
     retry: {
@@ -135,7 +135,7 @@ The consumer can keep more than one http request sent and awaiting for response;
 
 ### HTTP agents
 
-Queue consumers can use http(s) agents, which allow for connection pooling. To do so, you need 2 steps: first, configure one or more HTTP agents 
+Queue consumers can use http(s) agents, which allow for connection pooling. To do so, you need 2 steps: first, configure one or more HTTP agents
 
 ```js
   agents: {
@@ -162,10 +162,10 @@ Queue consumers can use http(s) agents, which allow for connection pooling. To d
         timeout: 12000
       },
       agent_other: {
-        ...  
+        ...
       },
       agent_other_one: {
-        ...  
+        ...
       }
     },
   },
@@ -197,14 +197,14 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.1.0
+  pepmartinez/aswh:1.1.2
 ```
 
 The configuration dir should contain:
 
 * A base config file, `config.js`. This would contain common configuration
 
-* Zero or more per-env files, `config-${NODE_ENV}.js`, which would contain configuration specific for each `$NODE_ENV` 
+* Zero or more per-env files, `config-${NODE_ENV}.js`, which would contain configuration specific for each `$NODE_ENV`
 
 Also, configuration can be added or overriden using env vars:
 
@@ -216,7 +216,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.1.0
+  pepmartinez/aswh:1.1.2
 ```
 
 ## Monitoring (Prometheus metrics)
