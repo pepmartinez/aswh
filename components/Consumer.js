@@ -21,11 +21,17 @@ class Consumer {
     this._http_agents = context.components.HttpAgents;
 
     _.each (context.components.Keuss.queues(), (q, qn) => {
-      const q_config = this._opts.keuss.queue_groups[q.ns()].queues[q.name()];
+      let q_config = this._opts.keuss.queue_groups[q.ns()].queues[q.name()];
 
       if (!q_config) {
-        // not a consumable queue. __failed__, for example
-        return;
+        // special queues such as __*__cb__
+        if ((q.name() == '__failed__cb__') || (q.name() == '__completed__cb__')) {
+          q_config = {};
+        }
+        else {
+          // not a consumable queue. __failed__, for example
+          return;
+        }
       }
 
       const opts = {
@@ -39,10 +45,14 @@ class Consumer {
         }
       };
 
-      const failed_q = context.components.Keuss.queues() [`__failed__@${q.ns()}`];
-      this._clients[qn] = new consumer (q, {failed_q}, this, opts);
+      // TODO not for __failed__, __failed__cb__ or __completed__cb__
+      const failed_q =       context.components.Keuss.queues() [`__failed__@${q.ns()}`];
+      const failed_cb_q =    context.components.Keuss.queues() [`__failed__cb__@${q.ns()}`];
+      const completed_cb_q = context.components.Keuss.queues() [`__completed__cb__@${q.ns()}`];
+
+      this._clients[qn] = new consumer (q, {failed_q, failed_cb_q, completed_cb_q}, this, opts);
       log.info ('created consumer on queue %s@%s', q.name (), q.ns());
-    })
+    });
 
     cb (null, this);
   }

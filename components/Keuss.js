@@ -55,6 +55,22 @@ class Keuss {
         log.info ('created *failed* queue %s', fqn);
         cb ();
       });
+
+      tasks_q.push (cb => {
+        const failed_cb_queue = '__failed__cb__';
+        const fcbqn = `${failed_cb_queue}@${qg_name}`;
+        this._queues[fcbqn] = this._factories[qg_name].queue (failed_cb_queue, {});
+        log.info ('created *callback for failed* queue %s', fcbqn);
+        cb ();
+      });
+
+      tasks_q.push (cb => {
+        const completed_cb_queue = '__completed__cb__';
+        const ccbqn = `${completed_cb_queue}@${qg_name}`;
+        this._queues[ccbqn] = this._factories[qg_name].queue (completed_cb_queue, {});
+        log.info ('created *callback for completed* queue %s', ccbqn);
+        cb ();
+      });
     });
 
     async.series ([
