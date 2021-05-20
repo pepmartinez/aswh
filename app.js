@@ -30,6 +30,7 @@ module.exports = function  (opts, context, done) {
   // main server entry point: anything here is queued for async delivery
   app.all ('/wh', (req, res) => {
     const url =    req.headers['x-dest-url'];
+    const cb_url = req.headers['x-cb-url'];
     const q_name = req.headers['x-queue'];
     const q_ns =   req.headers['x-queue-ns'];
     const agent =  req.headers['x-http-agent'];
@@ -56,6 +57,7 @@ module.exports = function  (opts, context, done) {
     delete req.headers['transfer-encoding'];
 
     delete req.headers['x-dest-url'];
+    delete req.headers['x-cb-url'];
     delete req.headers['x-queue'];
     delete req.headers['x-queue-ns'];
     delete req.headers['x-http-agent'];
@@ -68,7 +70,8 @@ module.exports = function  (opts, context, done) {
       xtra: {}
     };
 
-    if (agent) pl.xtra.agent = agent;
+    if (agent)  pl.xtra.agent = agent;
+    if (cb_url) pl.cb_url = cb_url;
 
     // ...and queue it
     const q = context.components.Keuss.queue(q_name, q_ns);

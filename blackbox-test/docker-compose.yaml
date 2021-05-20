@@ -19,14 +19,14 @@ services:
       - mongo
 
   tests:
-#    build:
-#      context: ./
-#      dockerfile: ./Dockerfile
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
 
-    image: node:14.15.1-alpine
-    command: tail -f /dev/null
-    volumes:
-      - ./:/app
+#    image: node:14.15.1-alpine
+#    command: tail -f /dev/null
+#    volumes:
+#      - ./:/app
 
     depends_on:
       - mongo
