@@ -105,6 +105,74 @@ describe ('insertions & forwards 1-to-1 on queue NS ' + mq, () => {
 
 
   [
+    'get',
+    'delete'
+  ].forEach (verb => it (`forwards a ${verb} ok, element does callback via __completed__cb__`, done => {
+    app = new express ();
+    app.use (bodyParser.json ());
+    app[verb] ('/this/is/the/path', (req, res) => {
+      res.status (200).send ('ok');
+    });
+
+    app.post ('/cb', (req, res) => {
+      res.send ('ok');
+      req.body.should.match ({
+        req: {
+          url:"http://tests:36677/this/is/the/path?a=1&bb=ww",
+          method: verb.toUpperCase (),
+          headers:{
+            a_a_a:"123",
+            b_b_b:"qwe"
+          },
+          xtra:{},
+          cb_url:"http://tests:36677/cb"
+        },
+        res:{
+          status:200,
+          body:{},
+          text:"ok",
+          headers:{
+            "content-type":/.+/,
+            "content-length":"2"
+          }
+        }
+      });
+
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        res[1].should.eql([]);
+        done ();
+      });
+    });
+
+    app_http = app.listen (36677, () => {
+      request (cfg.aswh.base_url)
+      [verb](cfg.aswh.api_path)
+      .set ({
+        'x-queue-ns': mq,
+        'x-cb-url': 'http://tests:36677/cb',
+        'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+        a_a_a: '123',
+        b_b_b: 'qwe'
+      })
+      .expect (201)
+      .end ((err, res) => {
+        if (err) return done (err);
+        res.body.should.match ({
+          res: 'ok',
+          id: /.+/,
+          q: 'default',
+          ns: mq
+        });
+      });
+    });
+  }));
+
+
+  [
     'post',
     'put',
     'patch'
@@ -155,6 +223,77 @@ describe ('insertions & forwards 1-to-1 on queue NS ' + mq, () => {
     });
   }));
 
+
+  [
+    'post',
+    'put',
+    'patch'
+  ].forEach (verb => it (`forwards a text ${verb} ok, element does callback via __completed__cb__`, done => {
+    app = new express ();
+    app.use (bodyParser.json ());
+    app[verb] ('/this/is/the/path', (req, res) => {
+      res.status (200).send ('ok');
+    });
+
+    app.post ('/cb', (req, res) => {
+      res.send ('ok');
+      req.body.should.match ({
+        req: {
+          url:"http://tests:36677/this/is/the/path?a=1&bb=ww",
+          method: verb.toUpperCase (),
+          headers:{
+            a_a_a:"123",
+            b_b_b:"qwe"
+          },
+          body: 'qwertyuiop',
+          xtra:{},
+          cb_url:"http://tests:36677/cb"
+        },
+        res:{
+          status:200,
+          body:{},
+          text:"ok",
+          headers:{
+            "content-type":/.+/,
+            "content-length":"2"
+          }
+        }
+      });
+
+      async.series ([
+        cb => setTimeout (cb, 1000),
+        cb => tools.getQueueContents (mq, 'default', cb),
+      ], (err, res) => {
+        if (err) return done (err);
+        res[1].should.eql([]);
+        done ();
+      });
+    });
+
+    app_http = app.listen (36677, () => {
+      request (cfg.aswh.base_url)
+      [verb] (cfg.aswh.api_path)
+      .set ({
+        'x-queue-ns': mq,
+        'x-cb-url': 'http://tests:36677/cb',
+        'x-dest-url': 'http://tests:36677/this/is/the/path?a=1&bb=ww',
+        a_a_a: '123',
+        b_b_b: 'qwe'
+      })
+      .type ('text')
+      .send ('qwertyuiop')
+      .expect (201)
+      .end ((err, res) => {
+        if (err) return done (err);
+        res.body.should.match ({
+          res: 'ok',
+          id: /.+/,
+          q: 'default',
+          ns: mq
+        });
+      });
+    });
+  }));
 
 });
 

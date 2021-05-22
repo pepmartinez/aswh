@@ -333,7 +333,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
     'post',
     'put',
     'patch'
-  ].forEach (verb => it (`forwards a text ${verb} ok, gets a 400, does not retry, element does callback via __failed__cb__does callback via __failed__cb__`, done => {
+  ].forEach (verb => it (`forwards a text ${verb} ok, gets a 400, does not retry, element does callback via __failed__cb__`, done => {
     app = new express ();
     app.use (bodyParser.json ());
     app[verb] ('/this/is/the/path', (req, res) => {
