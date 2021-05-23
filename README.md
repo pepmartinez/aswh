@@ -41,6 +41,16 @@ curl -X POST -i \
 
 You would need to first create a file `wh-payload.json` with the webhook payload or content. Also, it will be issued with an initial delay of 1 second.
 
+
+### HTTP callbacks
+`aswh` can produce an http callback for each webhook, when it is either completed ot failed: this is activated on a per-webhook basis, simply adding an extra header `x-cb-url`:
+if the webhook is called successfuly or is rejected permanently, a post to the url at `x-cb-url` is done with a json body including both the webhook's request and its response
+
+At this point, ther is no callback when an element is retried too many times: it will always go to `__deadletter__`
+
+The callbacks are implemented also as webhooks, delayed HTTP calls queued on `__completed__cb__` (for successful webhooks) and `__failed__cb__` (for failed webhooks) queues,
+which are pre-created by `aswh` on each queue group; you can in fact add configuration for them as if they were regular queues (which in fact are)
+
 ## Configuration
 
 `Aswh` uses [cascade-config](https://www.npmjs.com/package/cascade-config) as configuration engine; so, configuration can come from:
