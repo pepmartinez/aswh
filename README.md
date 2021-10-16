@@ -41,8 +41,8 @@ curl -X POST -i \
 
 You would need to first create a file `wh-payload.json` with the webhook payload or content. Also, it will be issued with an initial delay of 1 second.
 
-
 ### HTTP callbacks
+
 `aswh` can produce an http callback for each webhook, when it is either completed ot failed: this is activated on a per-webhook basis, simply adding an extra header `x-cb-url`:
 if the webhook is called successfuly or is rejected permanently, a post to the url at `x-cb-url` is done with a json body including both the webhook's request and its response
 
@@ -70,7 +70,7 @@ See `cascade-config` documentation for more details on how to pass extra configu
 * `listen_port`(defaults to 6677): port to listen to for incoming http
 
 * `defaults.`: global defaults for `aswh`. They, in turn, default to:
-
+  
   ```js
   defaults: {
     retry: {
@@ -112,7 +112,7 @@ keuss: {
 
       // queue definitions go here
       queues: {
-        default: {  // default queue, items for the group go here if no queue is specified
+        default: {  // default queue, selected if no queue is specified
           <opts>
         },
         q1: { // queue 'q1'
@@ -134,12 +134,34 @@ keuss: {
     },
     qg_2: {...},
     ...
-    qg_n: {...}
+    qg_n: {...},
+    default: {
+      // default queue group, selected if no queue group is specified
+      // as usual, config for the 'default' queue can be specified
+    }
   }
 }
 ```
 
-Each queue has its own consumer to relay http requests; each consumer consists basically in a http client plus a loop with reserves elements from the queue, sends them and commits or rollbacks the elements on the queue depending on the http response
+Queue group can be specified with the header x-queue-ns; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
+
+Queue (within the specified queue group, or `default`)can be specified  with the header x-queue; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
+
+A default, empty config is provided to create default queue group with a default queue:
+
+```js
+keuss: {
+  queue_groups: {
+    default: {
+      mq: 'simple',
+      queues: {
+        default: {
+        }
+      }
+    }
+  }
+}
+```
 
 The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the cosnumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
 
@@ -194,7 +216,65 @@ curl -v \
 
 would end up calling `https://alpha.omega/a/b` using the https agent configured at `agents.https.agent_z`
 
-If no agent is specified, no agent will be used; this would force `connection: close` upstream
+If no agent is specified, no agent will be used; this would force `connection: close` upstream. Same applies if the agent specified is not configured
+
+## Examples
+
+- Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
+  
+  ```bash
+  # this will immediately call https://some.host/gg?a=1&b=2
+  # passing the headers qwerty and asdfgh
+  curl -v \
+    -H 'x-dest-url: https://some.host/gg?a=1&b=2' \
+    -H 'qwerty: ggggggggggggg' \
+    -H 'asdfgh: hhhhhhhhhh'
+    http://localhost:6677/wh
+  
+  ```
+
+- Issue a POST call with a 15 sec delay
+  
+  ```bash
+  curl -X POST -i \
+    --data-bin @wh-payload.json \
+    -H 'x-dest-url: https://the-rea-location.api/ai/callback' \
+    -H 'content-type: application/json' \
+    -H 'x-delay: 15' \
+    http://localhost:6677/wh
+  ```
+
+- Issue a call with specific agent
+  
+  ```bash
+  # there must be an agents.https.agent_z declared in config
+  curl -v \
+    -H 'x-dest-url: https://some.host/gg?a=1&b=2' \
+    -H 'x-http-agent: agent_z' \
+    http://localhost:6677/wh
+  ```
+
+- issue a call with a specific queue group and specific queue
+  
+  ```bash
+  # queue group tape must be configured
+  # queue q_66 must be configured inside queue group tape
+  curl -v \
+    -H 'x-dest-url: https://some.host/gg?a=1&b=2' \
+    -H 'x-queue-ns: tape' \
+    -H 'x-queue: q_66' \
+    http://localhost:6677/wh
+  ```
+
+- Issue a call with a specific completion callback
+  
+  ```bash
+  # callback url can contain a querystring
+  curl -v \
+    -H 'x-dest-url: https://some.host/gg?a=1&b=2' \
+    -H 'x-cb-url: http://receive-callbacks.in.here:6789/a/b?xxx=1&yyy=22' \
+    http://localhost:6677/wh
+  ```
 
 ## Installation
 
@@ -207,7 +287,7 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.1.2
+  pepmartinez/aswh:1.2.2
 ```
 
 The configuration dir should contain:
@@ -226,7 +306,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.1.2
+  pepmartinez/aswh:1.2.2
 ```
 
 ## Monitoring (Prometheus metrics)
