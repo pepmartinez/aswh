@@ -109,8 +109,8 @@ class Keuss {
 
     if (q) return q;
 
-    // use default
-    return this._queues[name + '@' + ns];
+    // no queue found, return null
+    return null;
   }
 
 

@@ -233,7 +233,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
             },
             body: null
           }]);
-          console.log ('got to DL in %d tries', tries)
+//          console.log ('got to DL in %d tries', tries)
           done ();
         }
       } catch (e) {return done(e)}
@@ -463,7 +463,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
             },
             body: 'qwertyuiop'
           }]);
-          console.log ('got to DL in %d tries', tries)
+//          console.log ('got to DL in %d tries', tries)
           done ();
         }
       });
