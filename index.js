@@ -10,6 +10,18 @@ Log.init (err => {
   const  cconf = new CConf ();
 
   const _defaults = {
+    listen_port: 6677,
+    keuss: {
+      queue_groups: {
+        default: {
+          mq: 'simple',
+          queues: {
+            default: {
+            }
+          }
+        }
+      }
+    },
     defaults: {
       retry: {
         max: 5,
@@ -20,7 +32,6 @@ Log.init (err => {
         }
       }
     },
-    listen_port: 6677,
     agents: {
       http: {
         default : {

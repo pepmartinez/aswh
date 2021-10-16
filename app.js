@@ -38,7 +38,7 @@ module.exports = function  (opts, context, done) {
     let delay = 0;
 
     // we expect a header x-dest-url to specif the webhook's url
-    if (!url) return res.status (400).send ('no x-dest-url, ignoring request');
+    if (!url) return res.status (400).send ({res: 'ko', text: 'no x-dest-url, ignoring request'});
 
     // one can specify the initial delay, if desired
     const delay_str = req.headers['x-delay'];
@@ -75,6 +75,10 @@ module.exports = function  (opts, context, done) {
 
     // ...and queue it
     const q = context.components.Keuss.queue(q_name, q_ns);
+
+    if (!q) {
+      return res.status (404).send ({res: 'ko', text: `queue [${q_name || 'default'}] or queue group [${q_ns || 'default'}] not found`});
+    }
 
     log.debug ('queue query: %s:%s -> %s-%s', q_name, q_ns, q.name(), q.ns());
 

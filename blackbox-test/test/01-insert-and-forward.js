@@ -49,10 +49,28 @@ describe ('insertions & forwards 1-to-1 on queue NS ' + mq, () => {
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  it ('returns 404 if unknown x-queue-ns passed', done => {
+    request (cfg.aswh.base_url)
+    .get(cfg.aswh.api_path)
+    .set ({'x-dest-url': 'http://a.b/', 'x-queue-ns': 'odin-knows'})
+    .expect (404)
+    .end (done);
+  });
+
+
+  it ('returns 404 if unknown x-queue passed', done => {
+    request (cfg.aswh.base_url)
+    .get(cfg.aswh.api_path)
+    .set ({'x-dest-url': 'http://a.b/', 'x-queue': 'odin-knows'})
+    .expect (404)
+    .end (done);
+  });
+
+  
   it ('returns 400 if no x-dest-url passed', done => {
     request (cfg.aswh.base_url)
     .get(cfg.aswh.api_path)
-    .expect (400, 'no x-dest-url, ignoring request')
+    .expect (400)
     .end (done);
   });
 
