@@ -6,7 +6,6 @@ const log = Log.logger ('main:uber-app');
 
 
 
-
 ////////////////////////////////////////////////////////////
 function _do_ns_init (ns, context, cb) {
   const NS = require (`./${ns}/init`);
@@ -102,10 +101,22 @@ function _init_metrics (context, cb) {
   context.metrics = {};
 
   context.metrics.http_request_client = new context.promster.Histogram({
-    name: 'http_request_client',
+    name: 'aswh_http_request_client',
     help: 'HTTP requests as client',
     buckets: [0.01, 0.1, 0.5, 1, 5, 10],
     labelNames: ['proto', 'method', 'dest', 'status']
+  });
+
+  context.metrics.q_ops = new context.promster.Counter ({
+    name: 'aswh_queue_operations',
+    help: 'operations on queues',
+    labelNames: ['ns', 'q', 'op', 'st']
+  });
+
+  context.metrics.q_ops = new context.promster.Gauge ({
+    name: 'aswh_queue_sizes',
+    help: 'operations on queues',
+    labelNames: ['ns', 'q', 'op']
   });
 
   log.info ('metrics initialized');
