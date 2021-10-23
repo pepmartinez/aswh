@@ -83,7 +83,20 @@ class Keuss {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  setup (context, cb) {
+    this._metrics = context.metrics;
+    async.series ([
+      cb => {
+        this._rqgm_timer = setInterval (() => this._refresh_q_global_metrics (), 5000);
+        cb ();
+      }
+    ], cb);
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   end (cb) {
+    clearInterval (this._rqgm_timer);
     _.each (this._factories, (factory, factory_name) => {
       factory.close ();
       log.info ('closed factory %s', factory_name);
@@ -124,6 +137,38 @@ class Keuss {
 
       default: return MQ_simple;
     }
+  }
+
+
+  //////////////////////////////
+  _refresh_q_global_metrics () {
+    var tasks = [];
+
+    _.each (this._queues, (q, id) => {
+      tasks.push (cb => this._refresh_q_global_metrics_for_queue (q, id, cb))
+    });
+
+    async.parallel (tasks, err => {
+      if (err) return log.error ('while refreshing q_global metrics: %j', err);
+      log.info ('ping');
+    });
+  }
+
+
+  //////////////////////////////////////////////////
+  _refresh_q_global_metrics_for_queue (q, id, cb) {
+    async.parallel ({
+      size:          cb => q.size (cb),
+      totalSize:     cb => q.totalSize (cb),
+      schedSize:     cb => q.schedSize (cb),
+      resvSize:      cb => q.resvSize (cb),
+//      next_t:        cb => q.next_t (cb),
+    }, (err, res) => {
+      if (err) return cb (err);
+
+      _.each (res, (v, k) => this._metrics.q_sizes.labels (q.ns(), q.name(), k).set (v || 0));
+      cb ();
+    });
   }
 }
 

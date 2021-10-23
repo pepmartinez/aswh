@@ -113,10 +113,10 @@ function _init_metrics (context, cb) {
     labelNames: ['ns', 'q', 'op', 'st']
   });
 
-  context.metrics.q_ops = new context.promster.Gauge ({
+  context.metrics.q_sizes = new context.promster.Gauge ({
     name: 'aswh_queue_sizes',
     help: 'operations on queues',
-    labelNames: ['ns', 'q', 'op']
+    labelNames: ['ns', 'q', 'type']
   });
 
   log.info ('metrics initialized');
