@@ -150,7 +150,6 @@ class Keuss {
 
     async.parallel (tasks, err => {
       if (err) return log.error ('while refreshing q_global metrics: %j', err);
-      log.info ('ping');
     });
   }
 

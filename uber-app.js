@@ -119,6 +119,12 @@ function _init_metrics (context, cb) {
     labelNames: ['ns', 'q', 'type']
   });
 
+  context.metrics.consumer_window = new context.promster.Gauge ({
+    name: 'aswh_consumer_window',
+    help: 'window occuaption in consumers; or operations in course per consumer',
+    labelNames: ['id']
+  });
+
   log.info ('metrics initialized');
   cb ();
 }

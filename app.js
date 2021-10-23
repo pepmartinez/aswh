@@ -81,16 +81,18 @@ module.exports = function  (opts, context, done) {
     }
 
     log.debug ('queue query: %s:%s -> %s-%s', q_name, q_ns, q.name(), q.ns());
-
+log.info (context.metrics.q_ops)
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
         log.error ('error while pushing payload:', err);
+        context.metrics.q_ops.labels(q.ns(), q.name(), 'push', 'ko').inc ();
         return res.status (500).send (err);
       }
 
       // no errors, return a 201 Created...
       log.verbose ('inserted element in queue %s@%s with id %s', q.name(), q.ns(), id);
+      context.metrics.q_ops.labels(q.ns(), q.name(), 'push', 'ok').inc ();
       return res.status (201).send ({res: 'ok', id: id, q: q.name(), ns: q.ns ()});
     });
   });

@@ -60,7 +60,7 @@ class Consumer {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   setup (context, cb) {
-    this._http_req_cl_metric = context.metrics.http_request_client;
+    this._metrics = context.metrics;
     _.each (this._clients, (v, k) => {
       v.run ();
       log.info ('started consumer on queue %s', k);
