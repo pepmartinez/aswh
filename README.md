@@ -313,4 +313,7 @@ docker run \
 
 `aswh` uses [promster](https://github.com/tdeekens/promster) to maintain and provide `prometheus` metrics; along with the standard metrics provided by `promster`, the following metrics are also provided:
 
-* `http_request_client`: histogram of client http requests, labelled with `protocol`, `http method`, `destination` (host:port) and `http status`
+* `aswh_http_request_client`: histogram of client http requests, labelled with `protocol`, `http method`, `destination` (host:port) and `http status`
+* `aswh_queue_operations`: counter of queue operations, labelled with `qg`, `q`, `op` (`push`, `reserve`, `commit`, `rollback`, `deadletter`) and `st` (`ok` or `ko`)
+* `aswh_queue_sizes`: sizes of keuss queues, labelled with `qg`, `q` and `type` (`size`, `totalSize`, `resvSize`, `schedSize`)
+  

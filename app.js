@@ -81,7 +81,7 @@ module.exports = function  (opts, context, done) {
     }
 
     log.debug ('queue query: %s:%s -> %s-%s', q_name, q_ns, q.name(), q.ns());
-log.info (context.metrics.q_ops)
+
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
