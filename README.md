@@ -287,7 +287,7 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.2.2
+  pepmartinez/aswh:1.2.4
 ```
 
 The configuration dir should contain:
@@ -306,7 +306,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.2.2
+  pepmartinez/aswh:1.2.4
 ```
 
 ## Monitoring (Prometheus metrics)
