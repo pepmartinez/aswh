@@ -351,7 +351,7 @@ $ curl http://localhost:6677/q/default/default
 
 ## Examples
 
-*-* Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
+* Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
   
   ```bash
   # this will immediately call https://some.host/gg?a=1&b=2
