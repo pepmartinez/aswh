@@ -17,6 +17,7 @@ class model {
   
   _manage_resp (err, ret, res) {
     if (err) return res.status (err.code || 500).send ({res: 'ko', text: err.err || err});
+    if (!ret) return res.status (204).end ();
     res.status (ret.code || 200).send (ret.text || ret.ret || ret);
   }
 
