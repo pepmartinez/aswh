@@ -1,6 +1,6 @@
 # aswh: Asynchronous WebHook delivery
 
-This is a simple yet powerful component to perform asynchronous delivery of webhooks, or other HTTP calls. In a nutshell, it works as a store-and-forward http proxy: you call the proxy and get a HTTP 201, and the proxy then sees to deliver your HTTP call
+This is a simple yet powerful component to perform asynchronous delivery of webhooks, or other HTTP calls. In a nutshell, it works as a store-and-forward http proxy: you call the proxy and get a HTTP 201, and then the proxy sees to deliver your HTTP call
 
 The *store*  part uses [keuss](https://pepmartinez.github.io/keuss/) as a job-queue middleware; your HTTP calls would be stored in MongoDB collections; you get the following storage options:
 
@@ -16,27 +16,28 @@ Generally speaking, `aswh` works for any HTTP request, not just webhooks, with t
 
 * For the same reason, no body streaming is performed. `aswh` will read the request bodies completely before adding them to the store. There is, in fact, a size limit for bodies (100kb by default)
 
-* HTTP response bodies are totally ignored. HTTP responses are used only to decide whether to retry or not, and the HTTP status is all that's needed. HTTP responses are properly read, completely
+* HTTP response bodies are totally ignored. HTTP responses are used only to decide whether to retry or not, and the HTTP status is all that's needed. HTTP responses are properly read, completely. However, they're relayed in callbacks, if they are used (see *HTTP callbacks* below)
 
 ## How it works
 
 * You make HTTP calls (any method) to `http://localhost:6677/wh`. The whole HTTP request will be queued for later. You'll receive a `HTTP 201 Created` response, immediately after successful queuing
 * The queued requests are extracted by means of a reserve (they are not immediately removed, but marked as taken) from the queue and forwarded. The destination uri must be specified as the content of the `x-dest-url` header. The original uri, querystring included, is not used in the forwarding
-  * If the request fails with a retriable error (http 5xx, non-http errors) it is rolled back (ie, marked as available again) with a delay of `tries^2 * c2 + tries * c1 + c0` seconds (those c0, c1, c2 default to 3 but are configurable).
-  * If the request fails with a non-retriable error (http 4xx) it is committed (ie, removed) from the queue and moved to queue named `__failed__` inside the same keuss QM (that is, in the same mongodb database)
-  * If they succeed (http 2xx) it is committed (ie, removed)
+  * If the request fails with a retriable error (http 5xx, non-http errors) it is rolled back (ie, marked as available again) with a delay of `tries^2 * c2 + tries * c1 + c0` seconds (those `c0`, `c1`, `c2` values default to 3 but are configurable).
+  * If the request fails with a non-retriable error (http 4xx) it is committed (ie, removed) from the queue and moved to queue named `__failed__` inside the same keuss QM (that is, in the same mongodb database). If a callback was set, it is invoked
+  * If they succeed (http 2xx) it is committed (ie, removed). If a callback was set, it is invoked
 * Also, deadletter is used. If a webhook is retried over 5 times (by default; it's configurable), it is moved to the queue `__deadletter__`
+* There is a REST API to manage queues too: among other things, it allows you to remove waiting elements in any queue. See *Queue REST API* below for details
 
-Also, you can specify an initial delay in seconds in the header `x-delay`, which is not passed along either
+An initial delay in seconds can be specified un a per-call basis with the header `x-delay`, which is not passed along either
 
-For example, you can issue a POST webhook which would be retried if needed like this:
+For example, you can issue a POST webhook which would be delayed for an hour, then retried if needed, like this:
 
 ```bash
 curl -X POST -i \
   --data-bin @wh-payload.json \
   -H 'x-dest-url: https://the-rea-location.api/ai/callback' \
   -H 'content-type: text/plain' \
-  -H 'x-delay: 1' http://localhost:6677/wh
+  -H 'x-delay: 3600' http://localhost:6677/wh
 ```
 
 You would need to first create a file `wh-payload.json` with the webhook payload or content. Also, it will be issued with an initial delay of 1 second.
@@ -218,6 +219,136 @@ would end up calling `https://alpha.omega/a/b` using the https agent configured 
 
 If no agent is specified, no agent will be used; this would force `connection: close` upstream. Same applies if the agent specified is not configured
 
+## Queue REST API
+
+`aswh` provides a simple REST API to queues, which allow for simple introspection operations on queues and also to delete elements in queues
+
+### `GET /q`: lists queue groups
+
+This call lists the configured queue groups along with some basic information
+
+```shell
+$ curl http://localhost:6677/q | python3 -mjson.tool
+{
+    "default": {
+        "type": "mongo:simple",
+        "url": "mongodb://localhost/aswh_default"
+    },
+    "tape": {
+        "type": "mongo:persistent",
+        "url": "mongodb://localhost/aswh_tape"
+    },
+    "bucket": {
+        "type": "mongo:bucket-safe",
+        "url": "mongodb://localhost/aswh_bucket"
+    }
+}
+```
+
+### `GET /q/:qg`: Lists queues inside a queue group
+
+Lists the queues inside a queue group along with some details
+
+```shell
+$ curl http://localhost:6677/q/tape | python3 -mjson.tool
+{
+    "default": {
+        "size": 0,
+        "schedSize": 0,
+        "totalSize": 0,
+        "stats": {},
+        "resvSize": 0
+    },
+    "fastlane": {
+        "totalSize": 0,
+        "schedSize": 0,
+        "stats": {},
+        "size": 0,
+        "resvSize": 0
+    },
+    "__failed__": {
+        "resvSize": 0,
+        "size": 0,
+        "schedSize": 0,
+        "stats": {},
+        "totalSize": 0
+    },
+    "__failed__cb__": {
+        "stats": {},
+        "totalSize": 0,
+        "resvSize": 0,
+        "size": 0,
+        "schedSize": 0
+    },
+    "__completed__cb__": {
+        "stats": {},
+        "size": 0,
+        "schedSize": 0,
+        "totalSize": 0,
+        "resvSize": 0
+    }
+}
+```
+
+### `GET /q/:qg/:q`: lists queue details
+
+Gets details about a queue
+
+```shell
+$ curl http://localhost:6677/q/tape/default | python3 -mjson.tool
+{
+    "stats": {},
+    "schedSize": 0,
+    "totalSize": 0,
+    "size": 0,
+    "resvSize": 0
+}
+```
+
+### `DELETE /q/:qg/:q/:id`: deletes an element from a queue, by id
+
+Deletes an element from a queue, using the id passed in the response received at insertion time. 
+
+Note: elements already reserved (ie, being treated) can not be deleted
+
+```shell
+# inserts one element, initial delay of 1h
+$ curl -X POST -i \
+  --data-bin @wh-payload.json \
+  -H 'x-dest-url: https://the-rea-location.api/ai/callback' \
+  -H 'content-type: text/plain' \
+  -H 'x-delay: 3600' http://localhost:6677/wh
+HTTP/1.1 201 Created
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 73
+ETag: W/"49-uLHFgv7zNQc2PJCItdmI8w1kEas"
+Date: Sat, 11 Dec 2021 11:43:50 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"res":"ok","id":"61b48ef6c8987f1cfda04e38","q":"default","ns":"default"}
+
+
+# check on queue status
+$ curl http://localhost:6677/q/default/default
+{"schedSize":1,"totalSize":1,"stats":{"put":1},"size":0,"resvSize":0}
+
+
+# delete the inserted element, using the res.id value from above
+$ curl -X DELETE -i http://localhost:6677/q/default/default/61b48ef6c8987f1cfda04e38
+ HTTP/1.1 204 No Content
+Powered-By: Express
+Date: Sat, 11 Dec 2021 11:46:10 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+# check ueue status again
+$ curl http://localhost:6677/q/default/default
+{"stats":{"put":1},"size":0,"totalSize":0,"schedSize":0,"resvSize":0}
+```
+
 ## Examples
 
 - Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
@@ -230,7 +361,6 @@ If no agent is specified, no agent will be used; this would force `connection: c
     -H 'qwerty: ggggggggggggg' \
     -H 'asdfgh: hhhhhhhhhh'
     http://localhost:6677/wh
-  
   ```
 
 - Issue a POST call with a 15 sec delay
@@ -287,7 +417,7 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.2.4
+  pepmartinez/aswh:1.2.5
 ```
 
 The configuration dir should contain:
@@ -306,7 +436,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.2.4
+  pepmartinez/aswh:1.2.5
 ```
 
 ## Monitoring (Prometheus metrics)
@@ -316,4 +446,3 @@ docker run \
 * `aswh_http_request_client`: histogram of client http requests, labelled with `protocol`, `http method`, `destination` (host:port) and `http status`
 * `aswh_queue_operations`: counter of queue operations, labelled with `qg`, `q`, `op` (`push`, `reserve`, `commit`, `rollback`, `deadletter`) and `st` (`ok` or `ko`)
 * `aswh_queue_sizes`: sizes of keuss queues, labelled with `qg`, `q` and `type` (`size`, `totalSize`, `resvSize`, `schedSize`)
-  
