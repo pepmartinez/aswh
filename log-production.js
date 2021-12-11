@@ -1,7 +1,4 @@
 
-module.exports = {
-  level: {
-    default: 'info'
-  }
+export const level = {
+  default: 'info'
 };
-

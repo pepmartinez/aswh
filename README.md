@@ -47,7 +47,7 @@ You would need to first create a file `wh-payload.json` with the webhook payload
 `aswh` can produce an http callback for each webhook, when it is either completed ot failed: this is activated on a per-webhook basis, simply adding an extra header `x-cb-url`:
 if the webhook is called successfuly or is rejected permanently, a post to the url at `x-cb-url` is done with a json body including both the webhook's request and its response
 
-At this point, ther is no callback when an element is retried too many times: it will always go to `__deadletter__`
+At this point, there is no callback when an element is retried too many times: it will always go to `__deadletter__`
 
 The callbacks are implemented also as webhooks, delayed HTTP calls queued on `__completed__cb__` (for successful webhooks) and `__failed__cb__` (for failed webhooks) queues,
 which are pre-created by `aswh` on each queue group; you can in fact add configuration for them as if they were regular queues (which in fact are)
@@ -164,7 +164,7 @@ keuss: {
 }
 ```
 
-The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the cosnumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
+The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the consumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
 
 ### HTTP agents
 
@@ -217,15 +217,15 @@ curl -v \
 
 would end up calling `https://alpha.omega/a/b` using the https agent configured at `agents.https.agent_z`
 
-If no agent is specified, no agent will be used; this would force `connection: close` upstream. Same applies if the agent specified is not configured
+If no agent is specified, no agent will be used; this would force `connection: close` upstream. Same applies if the agent specified is not configured.
 
 ## Queue REST API
 
-`aswh` provides a simple REST API to queues, which allow for simple introspection operations on queues and also to delete elements in queues
+`aswh` provides a simple REST API to queues, which allow for simple introspection operations on queues and also to delete elements in queues.
 
 ### `GET /q`: lists queue groups
 
-This call lists the configured queue groups along with some basic information
+This call lists the configured queue groups along with some basic information:
 
 ```shell
 $ curl http://localhost:6677/q | python3 -mjson.tool
@@ -247,7 +247,7 @@ $ curl http://localhost:6677/q | python3 -mjson.tool
 
 ### `GET /q/:qg`: Lists queues inside a queue group
 
-Lists the queues inside a queue group along with some details
+Lists the queues inside a queue group along with some details:
 
 ```shell
 $ curl http://localhost:6677/q/tape | python3 -mjson.tool
@@ -292,7 +292,7 @@ $ curl http://localhost:6677/q/tape | python3 -mjson.tool
 
 ### `GET /q/:qg/:q`: lists queue details
 
-Gets details about a queue
+Gets details about a queue:
 
 ```shell
 $ curl http://localhost:6677/q/tape/default | python3 -mjson.tool
@@ -307,7 +307,7 @@ $ curl http://localhost:6677/q/tape/default | python3 -mjson.tool
 
 ### `DELETE /q/:qg/:q/:id`: deletes an element from a queue, by id
 
-Deletes an element from a queue, using the id passed in the response received at insertion time. 
+Deletes an element from a queue, using the id passed in the response received at insertion time.
 
 Note: elements already reserved (ie, being treated) can not be deleted
 
@@ -351,7 +351,7 @@ $ curl http://localhost:6677/q/default/default
 
 ## Examples
 
-- Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
+*-* Issue a call immediately, with no agent, default queue group, default queue; passing a querystring and some custom headers
   
   ```bash
   # this will immediately call https://some.host/gg?a=1&b=2
@@ -363,7 +363,7 @@ $ curl http://localhost:6677/q/default/default
     http://localhost:6677/wh
   ```
 
-- Issue a POST call with a 15 sec delay
+* Issue a POST call with a 15 sec delay
   
   ```bash
   curl -X POST -i \
@@ -374,7 +374,7 @@ $ curl http://localhost:6677/q/default/default
     http://localhost:6677/wh
   ```
 
-- Issue a call with specific agent
+* Issue a call with specific agent
   
   ```bash
   # there must be an agents.https.agent_z declared in config
@@ -384,7 +384,7 @@ $ curl http://localhost:6677/q/default/default
     http://localhost:6677/wh
   ```
 
-- issue a call with a specific queue group and specific queue
+* issue a call with a specific queue group and specific queue
   
   ```bash
   # queue group tape must be configured
@@ -396,7 +396,7 @@ $ curl http://localhost:6677/q/default/default
     http://localhost:6677/wh
   ```
 
-- Issue a call with a specific completion callback
+* Issue a call with a specific completion callback
   
   ```bash
   # callback url can contain a querystring

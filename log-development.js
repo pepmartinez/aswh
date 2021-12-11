@@ -1,7 +1,5 @@
  
-module.exports = {
-  level: {
-    default: 'verbose'
-  },
+export const level = {
+  default: 'verbose'
 };
 

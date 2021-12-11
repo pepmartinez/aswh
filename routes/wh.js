@@ -57,18 +57,18 @@ function _get_mw (context) {
       return res.status (404).send ({res: 'ko', text: `queue [${q_name || 'default'}] or queue group [${q_ns || 'default'}] not found`});
     }
 
-    log.debug ('queue query: %s:%s -> %s-%s', q_name, q_ns, q.name(), q.ns());
+    log.debug (`queue query: ${q_name}:${q_ns} -> ${q.name()}-${q.ns()}`);
 
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
-        log.error ('error while pushing payload:', err);
+        log.error (`error while pushing payload: ${err}`);
         context.metrics.q_ops.labels(q.ns(), q.name(), 'push', 'ko').inc ();
         return res.status (500).send (err);
       }
 
       // no errors, return a 201 Created...
-      log.verbose ('inserted element in queue %s@%s with id %s', q.name(), q.ns(), id);
+      log.verbose (`inserted element in queue ${q.name()}@${q.ns()} with id ${id}`);
       context.metrics.q_ops.labels(q.ns(), q.name(), 'push', 'ok').inc ();
       return res.status (201).send ({res: 'ok', id: id, q: q.name(), ns: q.ns ()});
     });
