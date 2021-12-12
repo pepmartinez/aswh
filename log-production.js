@@ -1,4 +1,5 @@
-
-export const level = {
-  default: 'info'
+module.exports = {
+  level: {
+    default: 'info'
+  }
 };
