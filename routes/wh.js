@@ -62,7 +62,7 @@ function _get_mw (context) {
     q.push (pl, {delay}, (err, id) => {
       // error while queuing?
       if (err) {
-        log.error (`error while pushing payload: ${err}`);
+        log.error ('error while pushing payload: %o', err);
         context.metrics.q_ops.labels(q.ns(), q.name(), 'push', 'ko').inc ();
         return res.status (500).send (err);
       }
