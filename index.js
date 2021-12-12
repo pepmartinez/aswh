@@ -57,8 +57,8 @@ Log.init (err => {
   cconf
   .obj (_defaults)
   .env ()
-  .file(__dirname + '/etc/config.js', {ignore_missing: true})
-  .file(__dirname + '/etc/config-{NODE_ENV:development}.js', {ignore_missing: true})
+  .file(`${__dirname}/etc/config.js`, {ignore_missing: true})
+  .file(`${__dirname}/etc/config-{NODE_ENV:development}.js`, {ignore_missing: true})
   .env ()
   .args ()
   .done ((err, config) => {

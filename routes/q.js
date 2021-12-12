@@ -129,7 +129,7 @@ class ctrl {
       err: `queue [${qn}] or queue group [${ns}] not found`
     });
   
-    log.debug ('deleting element [%s] from queue %s at %s', id, q, ns);
+    log.debug (`deleting element [${id}] from queue ${q} at ${ns}`);
     q.remove (id, (err, res) => {
       if (err) return cb (err);
       if (!res) return cb ({code: 404, err: `element with id [${id}] not found`});
@@ -152,4 +152,3 @@ module.exports = {
     app.delete ('/q/:ns/:qn/:id', (req, res) => _model._delete_by_id_from_queue (req, res));
   }
 };
-

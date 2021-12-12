@@ -13,7 +13,7 @@ function _do_ns_init (ns, context, cb) {
   NS.init (context, (err, res) => {
     if (err) return cb (err);
     context[ns] = res;
-    log.info ('%s initialized', ns);
+    log.info (`${ns} initialized`);
     cb ();
   });
 }
@@ -25,13 +25,13 @@ function _do_ns_setup (ns, context, cb) {
   _.each (context[ns], (v, k) => {
     if (v.setup) {
       tasks.push (cb => {
-        log.info ('setting up %s %s', ns, k);
+        log.info (`setting up ${ns} ${k}`);
         v.setup (context, cb);
       });
     }
   });
 
-  log.info ('setting up %s', ns);
+  log.info (`setting up ${ns}`);
   async.series (tasks, cb);
 }
 
@@ -41,12 +41,12 @@ function _do_ns_end (ns, context, cb) {
   var tasks = [];
   _.each (context[ns], (v, k) => {
     tasks.push (cb => {
-      log.info ('shutting down %s %s', ns, k);
+      log.info (`shutting down ${ns} ${k}`);
       v.end (cb);
     });
   });
 
-  log.info ('shutting down %s', ns);
+  log.info (`shutting down ${ns}`);
   async.series (tasks, cb);
 }
 

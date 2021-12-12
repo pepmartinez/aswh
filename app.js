@@ -33,10 +33,9 @@ module.exports = function  (opts, context, done) {
 
   // express error manager
   app.use (function (err, req, res, next) {
-    log.error ('error caught: %s', err.stack);
+    log.error (`error caught: ${err.stack}`);
     res.status (err.status || 500).send (err.stack);
   });
 
   done (null, app);
-};
-
+}
