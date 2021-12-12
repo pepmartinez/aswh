@@ -35,5 +35,8 @@
   },
   "bin": {
     "aswh": "./index.js"
+  },
+  "scripts": {
+    "test": "cd blackbox-test && docker-compose up --exit-code-from tests --build --abort-on-container-exit && docker-compose logs tests && docker-compose down && cd .."
   }
 }
