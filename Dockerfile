@@ -1,5 +1,5 @@
-# docker build -t pepmartinez/aswh:1.2.6 .
-# docker push pepmartinez/aswh:1.2.6
+# docker build -t pepmartinez/aswh:1.2.7 .
+# docker push pepmartinez/aswh:1.2.7
 
 FROM node:14.15.2-buster-slim as builder
 
