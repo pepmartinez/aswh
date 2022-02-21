@@ -32,7 +32,7 @@ module.exports = function  (opts, context, done) {
   app.use ('/public', express.static (path.join (__dirname, 'public')));
   
   // main page
-  app.get ('/', (req, res) => res.render ('index', {title: 'Job Queues'}));
+  app.get ('/', (req, res) => res.render ('index', {title: 'ASyncWebHooks'}));
 
   // parse everything as text. A more robust and generic solution should use raw() and manage Buffers, though
   app.use (bodyParser.text ({type: () => true}));
