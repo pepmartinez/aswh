@@ -22,8 +22,8 @@
   },
   "license": "GPL-3.0",
   "dependencies": {
-    "@promster/express": "~5.1.2",
-    "body-parser": "~1.19.0",
+    "@promster/express": "~7.0.4",
+    "body-parser": "~1.19.2",
     "cascade-config": "~1.5.5",
     "express": "~4.17.1",
     "http-shutdown": "~1.2.2",
