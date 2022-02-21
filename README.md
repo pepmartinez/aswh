@@ -446,3 +446,9 @@ docker run \
 * `aswh_http_request_client`: histogram of client http requests, labelled with `protocol`, `http method`, `destination` (host:port) and `http status`
 * `aswh_queue_operations`: counter of queue operations, labelled with `qg`, `q`, `op` (`push`, `reserve`, `commit`, `rollback`, `deadletter`) and `st` (`ok` or `ko`)
 * `aswh_queue_sizes`: sizes of keuss queues, labelled with `qg`, `q` and `type` (`size`, `totalSize`, `resvSize`, `schedSize`)
+
+## Web UI
+
+A simple web UI is exposed on the / path, with a simple table exposing the state of all the queues
+
+[Web UI](Screenshot_20220221_204725.png)
