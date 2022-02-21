@@ -10,8 +10,6 @@ module.exports = function  (opts, context, done) {
   var access_log = Log.logger ('access');
   var app = express();
 
-  app.use (morgan ('combined', { stream: { write: message => access_log.info (message.trim ()) }}));
-
   app.use (promster.createMiddleware({
     app: app,
     options: {
@@ -23,6 +21,8 @@ module.exports = function  (opts, context, done) {
     res.setHeader ('Content-Type', promster.getContentType());
     res.end (await promster.getSummary());
   });
+
+  app.use (morgan ('combined', { stream: { write: message => access_log.info (message.trim ()) }}));
 
   // parse everything as text. A more robust and generic solution should use raw() and manage Buffers, though
   app.use (bodyParser.text ({type: () => true}));
