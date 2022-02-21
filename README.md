@@ -450,5 +450,4 @@ docker run \
 ## Web UI
 
 A simple web UI is exposed on the / path, with a simple table exposing the state of all the queues
-
-[Web UI](Screenshot_20220221_204725.png)
+![Web UI](/Screenshot_20220221_204725.png?raw=true "Web UI")
