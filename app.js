@@ -10,6 +10,11 @@ module.exports = function  (opts, context, done) {
   var access_log = Log.logger ('access');
   var app = express();
 
+  app.set ('x-powered-by', false);
+  app.set ('etag', false);
+  app.set ('views', path.join (__dirname, 'views'));
+  app.set ('view engine', 'pug');
+
   app.use (promster.createMiddleware({
     app: app,
     options: {
@@ -23,6 +28,11 @@ module.exports = function  (opts, context, done) {
   });
 
   app.use (morgan ('combined', { stream: { write: message => access_log.info (message.trim ()) }}));
+
+  app.use ('/public', express.static (path.join (__dirname, 'public')));
+  
+  // main page
+  app.get ('/', (req, res) => res.render ('index', {title: 'Job Queues'}));
 
   // parse everything as text. A more robust and generic solution should use raw() and manage Buffers, though
   app.use (bodyParser.text ({type: () => true}));

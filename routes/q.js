@@ -15,6 +15,7 @@ class model {
   }
 
   
+  ////////////////////////////////////////////////////////////////////////////////////
   _manage_resp (err, ret, res) {
     if (err) return res.status (err.code || 500).send ({res: 'ko', text: err.err || err});
     if (!ret) return res.status (204).end ();
@@ -24,7 +25,12 @@ class model {
 
   ////////////////////////////////////////////////////////////////////////////////////
   _get_qgs (req, res) {
-    this._ctrl._get_qgs ((err, ret) => this._manage_resp (err, ret, res));
+    if (req.query.array) {
+      this._ctrl._get_q_array ((err, ret) => this._manage_resp (err, ret, res));
+    }
+    else {
+      this._ctrl._get_qgs ((err, ret) => this._manage_resp (err, ret, res));
+    }
   }
 
 
@@ -63,13 +69,37 @@ class ctrl {
 
 
   ////////////////////////////////////////////////////////////////////////////////////
+  _get_q_array (cb) {
+    const tasks = {};
+    _.each (this._k.queues (), (q, qname) => {
+      tasks[qname] = cb => q.status(cb);
+    });
+  
+    async.parallel(tasks, (err, r) => {
+      if (err) return cb (err);
+      const final_res = [];
+  
+      _.forEach(r, (q, qname) => {
+        const spl = qname.split('@');
+        q.id = qname;
+        q.name = spl[0];
+        q.qg = spl[1];
+        final_res.push(q);
+      });
+  
+      cb (null, {data: final_res});
+    });
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////////////
   _get_qgs (cb) {
     const ret = {};
     _.each (this._k.queue_groups(), (v, k) => {
       ret[k] = {
         type: v.type(),
         url:  v._opts.url
-      }
+      };
     });
 
     cb (null, ret);
@@ -86,15 +116,7 @@ class ctrl {
     _.each (this._k.queues (), (v, k) => {
       const spl = k.split('@');
       if (spl[1] == ns) {
-        tasks[spl[0]] = cb => {
-          async.parallel ({
-            stats:     cb => v.stats(cb),
-            size:      cb => v.size(cb),
-            totalSize: cb => v.totalSize(cb),
-            schedSize: cb => v.schedSize(cb),
-            resvSize:  cb => v.resvSize(cb),
-          }, cb);
-        };
+        tasks[spl[0]] = cb => v.status(cb);
       }
     });
 
@@ -110,13 +132,7 @@ class ctrl {
     const q = this._k.queue(qn, ns);
     if (!q) return cb({code: 404, err: `queue ${qn} at group ${ns} does not exist`});
 
-    async.parallel ({
-      stats:     cb => q.stats(cb),
-      size:      cb => q.size(cb),
-      totalSize: cb => q.totalSize(cb),
-      schedSize: cb => q.schedSize(cb),
-      resvSize:  cb => q.resvSize(cb),
-    }, cb);
+    q.status(cb);
   }
 
 

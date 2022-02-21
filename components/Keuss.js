@@ -71,6 +71,14 @@ class Keuss {
         log.info ('created *callback for completed* queue %s', ccbqn);
         cb ();
       });
+
+      tasks_q.push (cb => {
+        const deadletter_queue = '__deadletter__';
+        const fqn = `${deadletter_queue}@${qg_name}`;
+        this._queues[fqn] = this._factories[qg_name].queue (deadletter_queue, {});
+        log.info ('created *deadletter* queue %s', fqn);
+        cb ();
+      });
     });
 
     async.series ([

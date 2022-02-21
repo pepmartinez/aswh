@@ -29,7 +29,7 @@ class Consumer {
           q_config = {};
         }
         else {
-          // not a consumable queue. __failed__, for example
+          // not a consumable queue. __failed__ or __deadletter__, for example
           return;
         }
       }
