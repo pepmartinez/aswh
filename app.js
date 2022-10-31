@@ -39,6 +39,7 @@ module.exports = function  (opts, context, done) {
 
   require ('./routes/wh')  .register (app, context);
   require ('./routes/q')   .register (app, context);
+  require ('./routes/c')   .register (app, context);
   require ('./routes/util').register (app, context);
 
   // express error manager
