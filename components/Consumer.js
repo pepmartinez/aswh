@@ -51,7 +51,7 @@ class Consumer {
         }
       };
 
-      // TODO not for __failed__, __failed__cb__ or __completed__cb__
+      // not for __failed__, __failed__cb__ or __completed__cb__
       const failed_q =       context.components.Keuss.queues() [`__failed__@${q.ns()}`];
       const failed_cb_q =    context.components.Keuss.queues() [`__failed__cb__@${q.ns()}`];
       const completed_cb_q = context.components.Keuss.queues() [`__completed__cb__@${q.ns()}`];

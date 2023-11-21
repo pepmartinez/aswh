@@ -6,11 +6,12 @@ const log = Log.logger ('app:wh');
 
 function _get_mw (context) {
   return function (req, res) {
-    const url =    req.headers['x-dest-url'];
-    const cb_url = req.headers['x-cb-url'];
-    const q_name = req.headers['x-queue'];
-    const q_ns =   req.headers['x-queue-ns'];
-    const agent =  req.headers['x-http-agent'];
+    const url =        req.headers['x-dest-url'];
+    const cb_url =     req.headers['x-cb-url'];
+    const q_name =     req.headers['x-queue'];
+    const q_ns =       req.headers['x-queue-ns'];
+    const agent =      req.headers['x-http-agent'];
+    const rearm_cron = req.headers['x-periodic-cron'];
 
     let delay = 0;
 
@@ -38,6 +39,7 @@ function _get_mw (context) {
     delete req.headers['x-queue'];
     delete req.headers['x-queue-ns'];
     delete req.headers['x-http-agent'];
+    delete req.headers['x-periodic-cron'];
 
     const pl = {
       url: url,
@@ -48,6 +50,7 @@ function _get_mw (context) {
     };
 
     if (agent)  pl.xtra.agent = agent;
+    if (rearm_cron)  pl.rearm_cron = rearm_cron;
     if (cb_url) pl.cb_url = cb_url;
 
     // ...and queue it
