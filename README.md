@@ -22,9 +22,9 @@ Generally speaking, `aswh` works for any HTTP request, not just webhooks, with t
 
 * You make HTTP calls (any method) to `http://localhost:6677/wh`. The whole HTTP request will be queued for later. You'll receive a `HTTP 201 Created` response, immediately after successful queuing
 * The queued requests are extracted by means of a reserve (they are not immediately removed, but marked as taken) from the queue and forwarded. The destination uri must be specified as the content of the `x-dest-url` header. The original uri, querystring included, is not used in the forwarding
-  * If the request fails with a retriable error (http 5xx, non-http errors) it is rolled back (ie, marked as available again) with a delay of `tries^2 * c2 + tries * c1 + c0` seconds (those `c0`, `c1`, `c2` values default to 3 but are configurable).
-  * If the request fails with a non-retriable error (http 4xx) it is committed (ie, removed) from the queue and moved to queue named `__failed__` inside the same keuss QM (that is, in the same mongodb database). If a callback was set, it is invoked
-  * If they succeed (http 2xx) it is committed (ie, removed). If a callback was set, it is invoked
+  * If the request fails with a retriable error (HTTP 5xx, non-http errors) it is rolled back (ie, marked as available again) with a delay of `tries^2 * c2 + tries * c1 + c0` seconds (those `c0`, `c1`, `c2` values default to 3 but are configurable).
+  * If the request fails with a non-retriable error (HTTP 4xx) it is committed (ie, removed) from the queue and moved to queue named `__failed__` inside the same keuss QM (that is, in the same mongodb database). If a callback was set, it is invoked
+  * If they succeed (HTTP 2xx) it is committed (ie, removed). If a callback was set, it is invoked
 * Also, deadletter is used. If a webhook is retried over 5 times (by default; it's configurable), it is moved to the queue `__deadletter__`
 * There is a REST API to manage queues too: among other things, it allows you to remove waiting elements in any queue. See *Queue REST API* below for details
 
@@ -37,7 +37,8 @@ curl -X POST -i \
   --data-bin @wh-payload.json \
   -H 'x-dest-url: https://the-rea-location.api/ai/callback' \
   -H 'content-type: text/plain' \
-  -H 'x-delay: 3600' http://localhost:6677/wh
+  -H 'x-delay: 3600' \
+  http://localhost:6677/wh
 ```
 
 You would need to first create a file `wh-payload.json` with the webhook payload or content. Also, it will be issued with an initial delay of 1 second.
@@ -51,6 +52,34 @@ At this point, there is no callback when an element is retried too many times: i
 
 The callbacks are implemented also as webhooks, delayed HTTP calls queued on `__completed__cb__` (for successful webhooks) and `__failed__cb__` (for failed webhooks) queues,
 which are pre-created by `aswh` on each queue group; you can in fact add configuration for them as if they were regular queues (which in fact are)
+
+
+### Recurrent calls
+Starting with v1.4.0 calls can be made recurrent: after a call has been done it is 'rearmed' to be sent again at some point in the future:
+
+* _done_ here means the call has been sent and it has received a response, or has seen a non-retriable error. It also covers retriable 
+errors that ended in the message moved to deadletter. Internal errors of any kind when managing retries that would cut the retry process 
+will also be considered as 'done'
+
+* The 'rearmed' call will be equivalent to adding a `x-delta`, but it will be calculated from the header `x-periodic-cron`
+  * its presence (with a valid cronspec) triggers the 'recurrent calls' feature
+  * the effective delta to rearm the call is calculated as the 'next' time derived from the cronspec
+
+* also, note that:
+  * the call itself (body, headers and URL) does not change at all from 'rearm' to 'rearm': the exact same call will be performed
+    time after time
+  * there is no way to add a termination condition
+
+Here's a simple example: this will execute a call to `https://the-rea-location.api/ai/callback` every 3 seconds
+
+```bash
+curl -X POST -i \
+  --data-bin @wh-payload.json \
+  -H 'x-dest-url: https://the-rea-location.api/ai/callback' \
+  -H 'content-type: text/plain' \
+  -H 'x-periodic-cron: */3 * * * * *' \
+  http://localhost:6677/wh
+```
 
 ## Configuration
 
@@ -417,7 +446,7 @@ docker run \
   --name aswh \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   - e NODE_ENV=development \
-  pepmartinez/aswh:1.3.8
+  pepmartinez/aswh:1.4.0
 ```
 
 The configuration dir should contain:
@@ -436,7 +465,7 @@ docker run \
   -v /path/to/configuration/dir:/usr/src/app/etc \
   -e NODE_ENV=development \
   -e defaults__retry__max=11 \ # this sets the default for max retries to 11
-  pepmartinez/aswh:1.3.8
+  pepmartinez/aswh:1.4.0
 ```
 
 ## Monitoring (Prometheus metrics)
