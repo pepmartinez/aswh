@@ -1,7 +1,7 @@
 {
   "name": "aswh",
   "description": "Asynchronous WebHook delivery, or generic store-and-forward HTTP proxy",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "keywords": [
     "webhook",
     "async",
@@ -26,7 +26,7 @@
   "dependencies": {
     "@promster/express": "~12.0.0",
     "body-parser": "~1.20.2",
-    "cascade-config": "~1.6.0",
+    "cascade-config": "~1.7.0",
     "cron-parser": "~4.9.0",
     "express": "~4.18.2",
     "http-shutdown": "~1.2.2",
