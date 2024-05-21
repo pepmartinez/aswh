@@ -19,14 +19,23 @@ class Keuss {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  _compose_keuss_url (qgroup) {
+    const url = new URL(this._opts.keuss.base_url);
+    url.pathname = `${url.pathname}_${qgroup}`;
+    return url.toString(); 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   init (context, cb) {
     var tasks_mq = [];
     var tasks_q = [];
 
     _.each (this._opts.keuss.queue_groups, (qg, qg_name)  => {
-      var keuss_factories_opts = {
+      const keuss_factories_opts = {
         name: qg_name,
-        url: `${this._opts.keuss.base_url}_${qg_name}`,
+        // TODO extract qs
+        url: this._compose_keuss_url (qg_name),
         deadletter: {
           max_ko: qg.max_retries || this._opts.defaults.retry.max
         }
