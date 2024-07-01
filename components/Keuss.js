@@ -2,9 +2,11 @@ var _ =     require('lodash');
 var Log =   require ('winston-log-space');
 var async = require ('async');
 
-var MQ_simple = require ('keuss/backends/mongo');
-var MQ_tape =   require ('keuss/backends/ps-mongo');
-var MQ_bucket = require ('keuss/backends/bucket-mongo-safe');
+var MQ_simple =     require ('keuss/backends/mongo');
+var MQ_tape =       require ('keuss/backends/ps-mongo');
+var MQ_bucket =     require ('keuss/backends/bucket-mongo-safe');
+var MQ_postgres =   require ('keuss/backends/postgres');
+var MQ_redis_oq =   require ('keuss/backends/redis-oq');
 
 var log = Log.logger ('Components:Keuss');
 
@@ -34,8 +36,12 @@ class Keuss {
     _.each (this._opts.keuss.queue_groups, (qg, qg_name)  => {
       const keuss_factories_opts = {
         name: qg_name,
-        // TODO extract qs
+        // extract qs
         url: this._compose_keuss_url (qg_name),
+        redis: _.merge ({}, this._opts.keuss.redis, qg.redis),
+
+// TODO manage config from 'redis' or 'postgres' objects
+
         deadletter: {
           max_ko: qg.max_retries || this._opts.defaults.retry.max
         }
@@ -51,42 +57,57 @@ class Keuss {
       _.each (qg.queues, (q, q_name) => {
         tasks_q.push (cb => {
           const fqn = `${q_name}@${qg_name}`
-          this._queues[fqn] = this._factories[qg_name].queue (q_name, q.opts || {});
-          log.info ('created queue %s', fqn);
-          cb ();
+          this._factories[qg_name].queue (q_name, q.opts || {}, (err, q) => {
+            if (err) return cb(err);
+            this._queues[fqn] = q
+            log.info ('created queue %s', fqn);
+            cb ();
+          });
         });
       });
 
       tasks_q.push (cb => {
         const failed_queue = '__failed__';
         const fqn = `${failed_queue}@${qg_name}`;
-        this._queues[fqn] = this._factories[qg_name].queue (failed_queue, {});
-        log.info ('created *failed* queue %s', fqn);
-        cb ();
+        this._factories[qg_name].queue (failed_queue, (err, q) => {
+          if (err) return cb(err);
+          this._queues[fqn] = q
+          log.info ('created *failed* queue %s', fqn);
+          cb ();
+        });
       });
 
       tasks_q.push (cb => {
         const failed_cb_queue = '__failed__cb__';
         const fcbqn = `${failed_cb_queue}@${qg_name}`;
-        this._queues[fcbqn] = this._factories[qg_name].queue (failed_cb_queue, {});
-        log.info ('created *callback for failed* queue %s', fcbqn);
-        cb ();
+        this._factories[qg_name].queue (failed_cb_queue, (err, q) => {
+          if (err) return cb(err);
+          this._queues[fcbqn] = q
+          log.info ('created *callback for failed* queue %s', fcbqn);
+          cb ();
+        });
       });
 
       tasks_q.push (cb => {
         const completed_cb_queue = '__completed__cb__';
         const ccbqn = `${completed_cb_queue}@${qg_name}`;
-        this._queues[ccbqn] = this._factories[qg_name].queue (completed_cb_queue, {});
-        log.info ('created *callback for completed* queue %s', ccbqn);
-        cb ();
+        this._factories[qg_name].queue (completed_cb_queue, (err, q) => {
+          if (err) return cb(err);
+          this._queues[ccbqn] = q
+          log.info ('created *callback for completed* queue %s', ccbqn);
+          cb ();
+        });
       });
 
       tasks_q.push (cb => {
         const deadletter_queue = '__deadletter__';
         const fqn = `${deadletter_queue}@${qg_name}`;
-        this._queues[fqn] = this._factories[qg_name].queue (deadletter_queue, {});
-        log.info ('created *deadletter* queue %s', fqn);
-        cb ();
+        this._factories[qg_name].queue (deadletter_queue, (err, q) => {
+          if (err) return cb(err);
+          this._queues[fqn] = q
+          log.info ('created *deadletter* queue %s', fqn);
+          cb ();
+        });
       });
     });
 
@@ -154,9 +175,11 @@ class Keuss {
   _mq (id) {
     switch (id) {
       case 'default':
-      case 'simple': return MQ_simple;
-      case 'tape':   return MQ_tape;
-      case 'bucket': return MQ_bucket;
+      case 'simple':   return MQ_simple;
+      case 'tape':     return MQ_tape;
+      case 'bucket':   return MQ_bucket;
+      case 'postgres': return MQ_postgres;
+      case 'redis':    return MQ_redis_oq;
 
       default: return MQ_simple;
     }
