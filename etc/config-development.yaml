@@ -1,6 +1,6 @@
 agents: 
   http: 
-    agent_a:
+    agent_a: &agent-config
       keepAlive: true
       keepAliveMsecs: 10000
       maxSockets: 10
@@ -8,12 +8,7 @@ agents:
       timeout: 12000
     
   https:
-    agent_z:
-      keepAlive: true
-      keepAliveMsecs: 10000
-      maxSockets: 10
-      maxFreeSockets: 2
-      timeout: 12000
+    agent_z: *agent-config
 
 keuss: 
   base_url: 'mongodb://localhost/aswh'

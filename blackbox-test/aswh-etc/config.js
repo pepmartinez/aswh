@@ -54,7 +54,52 @@ module.exports = {
           extra: {
           }
         }
-      }
+      },
+      postgres: {
+        max_retries: 3,
+        mq: 'postgres',
+        postgres: {
+          host: 'postgres'
+        },
+        queues: {
+          default: {
+            window: 3,
+            retry: {
+              delay: {
+                c0: 1,
+                c1: 1,
+                c2: 1
+              }
+            }
+          },
+          extra: {
+          }
+        }
+
+      },
+      redis: {
+        max_retries: 3,
+        mq: 'redis',
+        redis: {
+          Redis: {
+            host: 'redis'
+          }
+        },
+        queues: {
+          default: {
+            window: 3,
+            retry: {
+              delay: {
+                c0: 1,
+                c1: 1,
+                c2: 1
+              }
+            }
+          },
+          extra: {
+          }
+        }
+      },
     }
   }
 };

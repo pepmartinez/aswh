@@ -12,7 +12,8 @@ const tools =    require ('../tools');
 [
   'default',
   'tape',
-  'bucket'
+  'bucket',
+  'redis'
 ].forEach (mq => {
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   describe (`queue management - ${mq}`, () => {

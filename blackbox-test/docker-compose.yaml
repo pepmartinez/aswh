@@ -17,6 +17,8 @@ services:
       - ./aswh-etc:/usr/src/app/etc
     depends_on:
       - mongo
+      - redis
+      - postgres
 
   tests:
     build:
@@ -30,7 +32,6 @@ services:
 
     depends_on:
       - mongo
-
 
   mongo:
     image: mongo:4.4.2-bionic
