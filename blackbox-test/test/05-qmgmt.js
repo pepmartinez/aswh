@@ -10,11 +10,14 @@ const tools =    require ('../tools');
 
 
 [
-  'default',
-  'tape',
-  'bucket',
-  'redis'
-].forEach (mq => {
+  {mq: 'default',  unknown_id: '112233445566778899001122'},
+  {mq: 'tape',     unknown_id: '112233445566778899001122'},
+  {mq: 'bucket',   unknown_id: '112233445566778899001122'},
+  {mq: 'redis',    unknown_id: '112233445566778899001122'},
+  {mq: 'postgres', unknown_id: '00000000-0000-0000-0000-000000000000'},
+].forEach (entry => {
+  const mq = entry.mq;
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   describe (`queue management - ${mq}`, () => {
     let app = null;
@@ -48,6 +51,7 @@ const tools =    require ('../tools');
       }
     });
     
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     it ('gets all queues ok', done => {
       request (cfg.aswh.base_url)
@@ -108,7 +112,7 @@ const tools =    require ('../tools');
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     it ('returns 404 when attempting to remove a non-existing element from queue', done => {
       request (cfg.aswh.base_url)
-      .delete(cfg.aswh.q_path + `/${mq}/default/11223344556677889900aabb`)
+      .delete(cfg.aswh.q_path + `/${mq}/default/${entry.unknown_id}`)
       .expect (404)
       .end (done);
     });

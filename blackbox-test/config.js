@@ -14,6 +14,11 @@ module.exports = {
     host: 'redis'
   },
   postgres: {
-    host: 'postgres'
+    user:     'pg', 
+    password: 'pg',
+    host:     'postgres',
+    port:     5432,
+    database: 'pg'
+
   }
 };

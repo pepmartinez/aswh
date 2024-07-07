@@ -11,35 +11,38 @@ agents:
     agent_z: *agent-config
 
 keuss: 
-  base_url: 'mongodb://localhost/aswh'
+  base_url: mongodb://localhost/aswh
   queue_groups:
     tape:
-      mq: 'tape'
-      queues:
+      mq: tape
+      queues: &all_queues
         default: {}
         fastlane: {}
     bucket: 
-      mq: 'bucket'
-      queues:
-        default: {}
-        fastlane: {}
+      mq: bucket
+      queues: *all_queues
     redis: 
-      mq: 'redis'
+      mq: redis
+      redis: &redis_opts
+        Redis:
+          port: 6379
+          host: localhost
       signaller:
         provider: redis
-        opts: 
-          Redis: 
-            port: 6379
-            host: 'localhost'
-            db: 6
+        opts: *redis_opts
       stats:
         provider: redis
-        opts: 
-          Redis: 
-            port: 6379
-            host: 'localhost'
-            db: 6
-      queues: 
-        default: {}
-        fastlane: {}
+        opts: *redis_opts
+      queues: *all_queues
+    postgres: 
+      mq: postgres
+      postgres:
+        host: localhost
+      signaller:
+        provider: redis
+        opts: *redis_opts
+      stats:
+        provider: redis
+        opts: *redis_opts
+      queues: *all_queues
 

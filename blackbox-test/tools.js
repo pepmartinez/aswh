@@ -83,14 +83,22 @@ module.exports = {
 
     async.series ([
       cb => client.connect(cb),
-      cb => client.query(`SELECT * FROM ${queue}`, cb),
+      cb => client.query(`SELECT * FROM _k_tbl_${queue}`, cb),
       cb => client.end (cb)
     ], (err, res) => {
       client.end (() => {})
+//      console.log ('_getQueueContents_postgres err', err)
+//      console.log ('_getQueueContents_postgres res', res[1].rows)
       if (err) return cb (err);
 
-      console.log (res[1].rows);
-      return cb (null, res[1].rows);
+      const ret = res[1].rows.map (i => {
+        const ret = _.merge ({}, i, i._pl);
+        delete (ret._pl);
+        return ret;
+      });
+
+//      console.log ('_getQueueContents_postgres res', ret);
+      return cb (null, ret);
     });
   },
 
@@ -136,13 +144,13 @@ module.exports = {
 
     async.series ([
       cb => client.connect(cb),
-      cb => client.query(`DELETE FROM ${queue}`, cb),
+      cb => client.query(`DELETE FROM _k_tbl_${queue}`, cb),
       cb => client.end (cb)
     ], (err, res) => {
       client.end (() => {})
+//      console.log ('_clearQueue_postgres err', err)
+//      console.log ('_clearQueue_postgres res', res[1].rowCount)
       if (err) return cb (err);
-
-      console.log (res[1]);
       return cb ();
     });
   },
