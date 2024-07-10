@@ -1,7 +1,7 @@
 {
   "name": "aswh",
   "description": "Asynchronous WebHook delivery, or generic store-and-forward HTTP proxy",
-  "version": "1.4.1",
+  "version": "2.0.0",
   "keywords": [
     "webhook",
     "async",

@@ -2,13 +2,17 @@
 
 This is a simple yet powerful component to perform asynchronous delivery of webhooks, or other HTTP calls. In a nutshell, it works as a store-and-forward http proxy: you call the proxy and get a HTTP 201, and then the proxy sees to deliver your HTTP call
 
-The *store*  part uses [keuss](https://pepmartinez.github.io/keuss/) as a job-queue middleware; your HTTP calls would be stored in MongoDB collections; you get the following storage options:
+The *store*  part uses [keuss](https://pepmartinez.github.io/keuss/) as a job-queue middleware; your HTTP calls would be stored in `mongodb` collections, `postgres` tables or `redis` structures; you get the following storage options:
 
-* *simple*: the HTTP calls are stored in a collection, one object per request, and are removed after being confirmed
+* *simple*: the HTTP calls are stored in a `mongodb` collection, one object per request, and are removed after being confirmed
 
-* *tape*: the HTTP calls are stored in a collection, one object per request, and are marked as consumed after being confirmed. Consumed objects are removed at a later time using a TTL index
+* *tape*: the HTTP calls are stored in a `mongodb` collection, one object per request, and are marked as consumed after being confirmed. Consumed objects are removed at a later time using a TTL index
 
-* *bucket*: the HTTP calls are stored in a collection, but they are packed, several in a single object. This increases performance by an order of magnitude without taxing durability much
+* *bucket*: the HTTP calls are stored in a `mongodb` collection but they are packed, several in a single object. This increases performance by an order of magnitude without taxing durability much
+
+* *redis*: the HTTP calls are stored in a combination of `redis` structures (under the hood it uses `redis-oq` keuss backend). The persistence and durability will depend on how the redis server is configured, but consider it's mostly an in-memory DB. On the other hand you get blazing fast performance
+
+* *postgres* : the HTTP calls are stored in `postgres` tables. Performance is much lower, but durability is great; it makes a great option if you already have `postgres` deployed
 
 Generally speaking, `aswh` works for any HTTP request, not just webhooks, with the following limitations:
 
@@ -89,9 +93,15 @@ curl -X POST -i \
 
 * CLI args
 
-* `etc/config.js` file
+* `etc/config.js` file (optional)
 
 * `etc/config-${NODE_ENV:-development}.js` file (optional)
+
+* `etc/config.yaml` file (optional)
+
+* `etc/config-${NODE_ENV:-development}.yaml` file (optional)
+
+The use of `yaml` configs is recommended over `js` for readability
 
 See `cascade-config` documentation for more details on how to pass extra configuration (or override it) using environment variables or CLI args
 
@@ -101,76 +111,84 @@ See `cascade-config` documentation for more details on how to pass extra configu
 
 * `defaults.`: global defaults for `aswh`. They, in turn, default to:
   
-  ```js
-  defaults: {
-    retry: {
-      max: 5,
-      delay: {
-        c0: 3,
-        c1: 3,
+  ```yaml
+  defaults:
+    retry:
+      max: 5
+      delay:
+        c0: 3
+        c1: 3
         c2: 3
-      }
-    }
-  }
   ```
 
 ### Queues and queue groups
 
-`Aswh` supports the use of many queues; queues are organized in *queue groups* , which are implemented as a keuss queue factory (plus keuss stats and keuss signaller); in turn, each queue-group/keuss-factory can use its own mongodb database (although they all share the same mongodb cluster/server)
+`aswh` supports the use of many queues; queues are organized in *queue groups* , which are implemented as a keuss queue factory (plus keuss stats and keuss signaller); in turn, each queue-group/keuss-factory can use its own mongodb database (although they all share the same mongodb cluster/server)
 
 Queue groups are declared using the following configuration schema:
 
-```js
-keuss: {
-  // base mongodb url. All queue groups share the same server/cluster
-  // but each one goes to a separated database whose name is created
-  // by suffixing the db in base_url with '_$queue_group_name'
-  base_url: 'mongodb://localhost/aswh',
-  queue_groups: {
-    qg_1: {
-      // queue group named 'qg_1'. It will use the following databases:
-      // mongodb://localhost/aswh_qg_1 : main data, queues
-      // mongodb://localhost/aswh_qg_1_signal : keuss signaller
-      // mongodb://localhost/aswh_qg_1_stats : keuss stats
+```yaml
+keuss:
+  # base mongodb url. All queue groups using a mongodb mq share the same server/cluster
+  # but each one goes to a separated database whose name is created by suffixing the db
+  # in base_url with '_$queue_group_name'
+  base_url: mongodb://localhost/aswh
+      
+  signaller:
 
-      // optional, defaults to 'default'
-      mq: 'default' | 'tape' | 'bucket',
+  stats:
 
-      // maximum number of retries before moving elements to
-      // __deadletter__ queue. defaults to defaults.retry.max or 5
-      max_retries: <int>,
+  queue_groups: 
+    qg_1: 
+      # queue group named 'qg_1'. It will use the following mongodb databases
+      # in case of a mongodb mq (default, tape or bucket):
+      # mongodb://localhost/aswh_qg_1 : main data, queues
+      # mongodb://localhost/aswh_qg_1_signal : keuss signaller
+      # mongodb://localhost/aswh_qg_1_stats : keuss stats
 
-      // queue definitions go here
-      queues: {
-        default: {  // default queue, selected if no queue is specified
+      # optional, defaults to 'default'
+      mq: default | tape | bucket | redis | postgres
+
+      redis: # redis config in case of 'redis' mq. Uses the same config schema of keuss
+        Redis:
+          host: redis
+          port: 6379
+          db: 5
+
+      postgres: # postgres config in case of 'postgres' mq. Uses the same config schema of keuss
+        host: postgres
+
+      signaller:
+
+      stats:
+
+      # maximum number of retries before moving elements to
+      # __deadletter__ queue. defaults to defaults.retry.max or 5
+      max_retries: <int>
+
+      # queue definitions go here
+      queues: 
+        default: # default queue, selected if no queue is specified
           <opts>
-        },
-        q1: { // queue 'q1'
-          window: 3,  // consumer uses a window size of 3
-          retry: {
-            delay: { // c0, c1 and c2 values for retry delay
-              c0: 1,
-              c1: 1,
+        q1: # queue 'q1'
+          window: 3  # consumer uses a window size of 3
+          retry: 
+            delay:  # c0, c1 and c2 values for retry delay
+              c0: 1
+              c1: 1
               c2: 1
-            }
-          },
           <opts>
-        },
-        q2: {
+        q2: 
           <opts>
-        },
         ...
-      }
-    },
-    qg_2: {...},
+    qg_2: 
+      ...
     ...
-    qg_n: {...},
-    default: {
-      // default queue group, selected if no queue group is specified
-      // as usual, config for the 'default' queue can be specified
-    }
-  }
-}
+    qg_n:
+      ...
+    default: 
+      # default queue group, selected if no queue group is specified
+      # as usual, config for the 'default' queue can be specified
 ```
 
 Queue group can be specified with the header x-queue-ns; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
@@ -179,58 +197,47 @@ Queue (within the specified queue group, or `default`)can be specified  with the
 
 A default, empty config is provided to create default queue group with a default queue:
 
-```js
-keuss: {
-  queue_groups: {
-    default: {
-      mq: 'simple',
-      queues: {
-        default: {
-        }
-      }
-    }
-  }
-}
+```yaml
+keuss:
+  queue_groups:
+    default:
+      mq: simple
+      queues:
+        default: 
 ```
 
 The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the consumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
+
+### Keuss Signallers and Stats
 
 ### HTTP agents
 
 Queue consumers can use http(s) agents, which allow for connection pooling. To do so, you need 2 steps: first, configure one or more HTTP agents
 
-```js
-  agents: {
-    http: {
-      // standard node.js http agents
-      agent_a : {
-        keepAlive: true,
-        keepAliveMsecs: 10000,
-        maxSockets: 10,
-        maxFreeSockets: 2,
+```yaml
+  agents:
+    http:
+      # standard node.js http agents
+      agent_a :
+        keepAlive: true
+        keepAliveMsecs: 10000
+        maxSockets: 10
+        maxFreeSockets: 2
         timeout: 12000
-      },
-      agent_b: {
+      agent_b:
         ...
-      }
-    },
-    https: {
-      // standard node.js https agents
-      agent_z : {
-        keepAlive: true,
-        keepAliveMsecs: 10000,
-        maxSockets: 10,
-        maxFreeSockets: 2,
+    https: 
+      # standard node.js https agents
+      agent_z :
+        keepAlive: true
+        keepAliveMsecs: 10000
+        maxSockets: 10
+        maxFreeSockets: 2
         timeout: 12000
-      },
-      agent_other: {
+      agent_other: 
         ...
-      },
-      agent_other_one: {
+      agent_other_one: 
         ...
-      }
-    },
-  },
 ```
 
 Both take the standard node.js http and https agents specified at [here](https://nodejs.org/dist/latest-v14.x/docs/api/http.html#http_class_http_agent) and [here](https://nodejs.org/dist/latest-v14.x/docs/api/https.html#https_class_https_agent). `agents.http` specify http agents to be used on `http://` target urls, `agents.https` specify agents for `https://` targets.
