@@ -205,7 +205,7 @@ keuss:
 
 Queue group can be specified with the header x-queue-ns; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
 
-Queue (within the specified queue group, or `default`)can be specified  with the header x-queue; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
+Queue (within the specified queue group, or `default`) can be specified  with the header x-queue; if none specified, default will be used; if it does not exist (not declared in config or not default) the call will be rejected with a `HTTP 404`
 
 A default, empty config is provided to create default queue group with a default queue:
 
