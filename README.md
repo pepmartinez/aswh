@@ -134,9 +134,15 @@ keuss:
   # in base_url with '_$queue_group_name'
   base_url: mongodb://localhost/aswh
       
-  signaller:
+  signaller: # keuss signaller to use as default
+    provider: default | mongo | redis | mem
+    opts: # keuss options for the signaller
+      ...
 
-  stats:
+  stats: # keuss stats to use as default
+    provider: default | mongo | redis | mem
+    opts: # keuss options for the stats
+      ...
 
   queue_groups: 
     qg_1: 
@@ -158,9 +164,15 @@ keuss:
       postgres: # postgres config in case of 'postgres' mq. Uses the same config schema of keuss
         host: postgres
 
-      signaller:
+      signaller: # keuss signaller to use in this queue group
+        provider: default | mongo | redis | mem
+        opts: # keuss options for the signaller
+          ...
 
-      stats:
+      stats: # keuss stats to use in this queue group
+        provider: default | mongo | redis | mem
+        opts: # keuss options for the stats
+          ...
 
       # maximum number of retries before moving elements to
       # __deadletter__ queue. defaults to defaults.retry.max or 5
@@ -209,6 +221,80 @@ keuss:
 The consumer can keep more than one http request sent and awaiting for response; by default, only one is kept (which amounts to one-request-at-a-time), but a different value can be specified at `<queue>.window` option. `window=10` would allow the consumer to keep up to 10 requests sent and awaiting for response (and thus up to 10 elements reserved and waiting for commit/rollback at the queue)
 
 ### Keuss Signallers and Stats
+
+`keuss` requires the use of signallers and stats to offer all available functionality: load balancing and distributed queues 
+won't work without a non-mem signaller, for example
+
+For the mqs `default`, `tape` and `bucket` (those based on mongodb) `aswh` creates a `mongo` signaller and a `mongo` stats
+automatically, based on the mongodb config used
+
+The `redis` and `postgres` mqs, on the contrary, use by default the in-memory signaller and stats, which are limited to a 
+single process. A more capable signaller can be specified either at the top level, or in each queeu group. 
+
+Bear in mind that if you sepcify a explicit default signaller or stats, it will apply to _all_ queue groups, including those 
+using mongo-based mqs
+
+All of the signaller and stats providers offered by `keuss` can be specified:
+
+* `mem`: that is the default: memory based, in-process structures
+* `mongo`: a mongo capped collection for signaller, an extra collection to store stats
+* `redis`: a pubsub as the signaller, a hash for the stats 
+* `default`: alias for `mongo`
+
+A signaller definition is prerry similar to those in `keuss`; let's see a few examples:
+
+A mem-based signaller and stats. They have no config
+```yaml
+keuss:
+  signaller:
+    provider: mem
+  stats:
+    provider: mem
+```
+
+A redis-based signaller and stats, with config. Config is the same than in `keuss`
+```yaml
+keuss:
+  signaller:
+    provider: redis
+    opts:
+      Redis:
+        port: 6379
+        host: localhost
+  stats:
+    provider: redis
+    opts:
+      Redis:
+        port: 6379
+        host: localhost
+```
+A mongo-based signaller and stats,  with config. Config is the same than in `keuss`
+```yaml
+keuss:
+  signaller:
+    provider: mongo
+    opts:
+      url: mongodb://mongo:27017/my-own-signaller-database
+  stats:
+    provider: mongo
+    opts:
+      url: mongodb://mongo:27017/my-own-signaller-database
+```
+
+The same goes for per-group cases. Also, it's always a good idea to use yaml anchors to reduce duplications:
+```yaml
+keuss:
+  queue_groups:
+    one-queue-group-using-postgres:
+      mq: posgres
+      signaller: &oqgup_redis_conf
+        provider: redis
+        opts:
+          Redis:
+            port: 6379
+            host: localhost
+      stats: *oqgup_redis_conf
+```
 
 ### HTTP agents
 
