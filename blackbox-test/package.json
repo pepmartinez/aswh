@@ -1,6 +1,6 @@
 {
   "name": "blackbox-test",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "dependencies": {},
   "devDependencies": {
     "async": "~3.2.5",
@@ -8,7 +8,7 @@
     "chance": "~1.1.11",
     "express": "~4.19.2",
     "lodash": "~4.17.21",
-    "mocha": "~10.5.2",
+    "mocha": "~10.6.0",
     "mongodb": "~4.17.0",
     "should": "~13.2.3",
     "supertest": "~7.0.0",
