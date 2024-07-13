@@ -8,5 +8,17 @@ module.exports = {
   },
   keuss: {
     base_url: 'mongodb://mongo/aswh',
+  },
+  redis: {
+    port: 6379,
+    host: 'redis'
+  },
+  postgres: {
+    user:     'pg', 
+    password: 'pg',
+    host:     'postgres',
+    port:     5432,
+    database: 'pg'
+
   }
 };

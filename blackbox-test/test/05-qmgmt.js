@@ -10,10 +10,14 @@ const tools =    require ('../tools');
 
 
 [
-  'default',
-  'tape',
-  'bucket'
-].forEach (mq => {
+  {mq: 'default',  unknown_id: '112233445566778899001122'},
+  {mq: 'tape',     unknown_id: '112233445566778899001122'},
+  {mq: 'bucket',   unknown_id: '112233445566778899001122'},
+  {mq: 'redis',    unknown_id: '112233445566778899001122'},
+  {mq: 'postgres', unknown_id: '00000000-0000-0000-0000-000000000000'},
+].forEach (entry => {
+  const mq = entry.mq;
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   describe (`queue management - ${mq}`, () => {
     let app = null;
@@ -47,18 +51,31 @@ const tools =    require ('../tools');
       }
     });
     
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     it ('gets all queues ok', done => {
       request (cfg.aswh.base_url)
       .get(cfg.aswh.q_path + `/${mq}`)
       .expect (200)
       .end ((err, res) => {
-        res.body.should.match ({
-          default: { stats: {}, size: 0, resvSize: 0, schedSize: 0, totalSize: 0 },
-          __failed__cb__: { stats: {}, totalSize: 0, resvSize: 0, size: 0, schedSize: 0 },
-          __failed__: { stats: {}, size: 0, schedSize: 0, totalSize: 0, resvSize: 0 },
-          __completed__cb__: { stats: {}, schedSize: 0, totalSize: 0, size: 0, resvSize: 0 }
-        })
+        if (mq == 'redis') {
+          // redis oq does not support resvSize properly
+          res.body.should.match ({
+            default: { stats: {}, size: 0, schedSize: 0, totalSize: 0 },
+            __failed__cb__: { stats: {}, totalSize: 0, size: 0, schedSize: 0 },
+            __failed__: { stats: {}, size: 0, schedSize: 0, totalSize: 0 },
+            __completed__cb__: { stats: {}, schedSize: 0, totalSize: 0, size: 0 }
+          });
+        }
+        else {
+          res.body.should.match ({
+            default: { stats: {}, size: 0, resvSize: 0, schedSize: 0, totalSize: 0 },
+            __failed__cb__: { stats: {}, totalSize: 0, resvSize: 0, size: 0, schedSize: 0 },
+            __failed__: { stats: {}, size: 0, schedSize: 0, totalSize: 0, resvSize: 0 },
+            __completed__cb__: { stats: {}, schedSize: 0, totalSize: 0, size: 0, resvSize: 0 }
+          });
+        }
+
         done (err);
       });
     });
@@ -70,7 +87,14 @@ const tools =    require ('../tools');
       .get(cfg.aswh.q_path + `/${mq}/default`)
       .expect (200)
       .end ((err, res) => {
-        res.body.should.match ({ stats: {}, size: 0, resvSize: 0, schedSize: 0, totalSize: 0 })
+        if (mq == 'redis') {
+          // redis oq does not support resvSize properly
+          res.body.should.match ({ stats: {}, size: 0, schedSize: 0, totalSize: 0 })
+        }
+        else {
+          res.body.should.match ({ stats: {}, size: 0, resvSize: 0, schedSize: 0, totalSize: 0 })
+        }
+
         done (err);
       });
     });
@@ -88,7 +112,7 @@ const tools =    require ('../tools');
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     it ('returns 404 when attempting to remove a non-existing element from queue', done => {
       request (cfg.aswh.base_url)
-      .delete(cfg.aswh.q_path + `/${mq}/default/11223344556677889900aabb`)
+      .delete(cfg.aswh.q_path + `/${mq}/default/${entry.unknown_id}`)
       .expect (404)
       .end (done);
     });
@@ -126,7 +150,14 @@ const tools =    require ('../tools');
               .end (cb)
       ], (err, res) => {
         if (err) return done (err);
-        res[4].body.should.match ({ size: 0, totalSize: 0, schedSize: 0, resvSize: 0 });
+        if (mq == 'redis') {
+          // redis oq does not support resvSize properly
+          res[4].body.should.match ({ size: 0, totalSize: 0, schedSize: 0 });
+        }
+        else {
+          res[4].body.should.match ({ size: 0, totalSize: 0, schedSize: 0, resvSize: 0 });
+        }
+
         done();
       })
     });
@@ -167,7 +198,13 @@ const tools =    require ('../tools');
                 .end (cb),
         ], (err, res) => {
           if (err) return done (err);
-          res[4].body.should.match ({totalSize: 1, size: 0, schedSize: 0, resvSize: 1 });
+          if (mq == 'redis') {
+            // redis oq does not support resvSize properly
+            res[4].body.should.match ({totalSize: 1, size: 0, schedSize: 1 });
+          }
+          else {
+            res[4].body.should.match ({totalSize: 1, size: 0, schedSize: 0, resvSize: 1 });
+          }
         });
       });
     });

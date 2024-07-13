@@ -1,8 +1,8 @@
-const should =  require ('should');
-const async =   require ('async');
-const request = require ('supertest');
-const _ =       require ('lodash');
-const express = require ('express');
+const should =     require ('should');
+const async =      require ('async');
+const request =    require ('supertest');
+const _ =          require ('lodash');
+const express =    require ('express');
 const bodyParser = require ('body-parser');
 
 const cfg =   require ('../config');
@@ -12,7 +12,9 @@ const tools = require ('../tools');
 [
   'default',
   'tape',
-  'bucket'
+  'bucket',
+  'redis',
+  'postgres'
 ].forEach (mq => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,9 +70,10 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => setTimeout (cb, 1000),
         cb => tools.getQueueContents (mq, 'default', cb),
         cb => tools.getQueueContents (mq, '__failed__', cb),
-        cb => tools.clearColl        (mq, '__failed__', cb),
+        cb => tools.clearQueue       (mq, '__failed__', cb),
       ], (err, res) => {
         if (err) return done (err);
+        try {
         res[1].should.eql([]);
         res[2].map (i => i.payload.__p ?  i.payload.__p :  i.payload).should.match ([{
           url: 'http://tests:36677/this/is/the/path?a=1&bb=ww',
@@ -80,6 +83,8 @@ describe ('errors and retries on queue NS ' + mq, () => {
           xtra: {}
         }]);
         done ();
+       } catch (e) { 
+        done (e) } 
       });
 
     });
@@ -201,8 +206,8 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => tools.getQueueContents (mq, 'default', cb),
         cb => tools.getQueueContents (mq, '__failed__', cb),
         cb => tools.getQueueContents (mq, '__deadletter__', cb),
-        cb => tools.clearColl        (mq, '__failed__', cb),
-        cb => tools.clearColl        (mq, '__deadletter__', cb),
+        cb => tools.clearQueue       (mq, '__failed__', cb),
+        cb => tools.clearQueue       (mq, '__deadletter__', cb),
       ], (err, res) => {
         if (err) return done (err);
         try {
@@ -289,7 +294,7 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => setTimeout (cb, 1000),
         cb => tools.getQueueContents (mq, 'default', cb),
         cb => tools.getQueueContents (mq, '__failed__', cb),
-        cb => tools.clearColl        (mq, '__failed__', cb),
+        cb => tools.clearQueue       (mq, '__failed__', cb),
       ], (err, res) => {
         if (err) return done (err);
         res[1].should.eql([]);
@@ -430,8 +435,8 @@ describe ('errors and retries on queue NS ' + mq, () => {
         cb => tools.getQueueContents (mq, 'default', cb),
         cb => tools.getQueueContents (mq, '__failed__', cb),
         cb => tools.getQueueContents (mq, '__deadletter__', cb),
-        cb => tools.clearColl        (mq, '__failed__', cb),
-        cb => tools.clearColl        (mq, '__deadletter__', cb),
+        cb => tools.clearQueue       (mq, '__failed__', cb),
+        cb => tools.clearQueue       (mq, '__deadletter__', cb),
       ], (err, res) => {
         if (err) return done (err);
 

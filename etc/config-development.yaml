@@ -1,0 +1,48 @@
+agents: 
+  http: 
+    agent_a: &agent-config
+      keepAlive: true
+      keepAliveMsecs: 10000
+      maxSockets: 10
+      maxFreeSockets: 2
+      timeout: 12000
+    
+  https:
+    agent_z: *agent-config
+
+keuss: 
+  base_url: mongodb://localhost/aswh
+  queue_groups:
+    tape:
+      mq: tape
+      queues: &all_queues
+        default: {}
+        fastlane: {}
+    bucket: 
+      mq: bucket
+      queues: *all_queues
+    redis: 
+      mq: redis
+      redis: &redis_opts
+        Redis:
+          port: 6379
+          host: localhost
+      signaller:
+        provider: redis
+        opts: *redis_opts
+      stats:
+        provider: redis
+        opts: *redis_opts
+      queues: *all_queues
+    postgres: 
+      mq: postgres
+      postgres:
+        host: localhost
+      signaller:
+        provider: redis
+        opts: *redis_opts
+      stats:
+        provider: redis
+        opts: *redis_opts
+      queues: *all_queues
+

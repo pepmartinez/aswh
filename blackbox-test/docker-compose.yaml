@@ -17,6 +17,8 @@ services:
       - ./aswh-etc:/usr/src/app/etc
     depends_on:
       - mongo
+      - redis
+      - postgres
 
   tests:
     build:
@@ -31,13 +33,21 @@ services:
     depends_on:
       - mongo
 
-
   mongo:
     image: mongo:4.4.2-bionic
     command: --logpath /dev/null
     restart: on-failure
-    ports:
-      - 37017:27017
+
+  redis:
+    image: redis:alpine
+    restart: on-failure
+
+  postgres:
+    image: postgres:16.3
+    restart: on-failure
+    environment:
+      POSTGRES_USER:     pg
+      POSTGRES_PASSWORD: pg
 
 networks:
   default:

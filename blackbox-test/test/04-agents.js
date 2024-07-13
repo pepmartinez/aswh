@@ -116,7 +116,6 @@ describe ('http(s) agent selection', () => {
       });
     });
 
-
     it (`calls ${verb} with explicit agent`, done => {
       app = new express ();
       app.use (bodyParser.text ({type: () => true}));

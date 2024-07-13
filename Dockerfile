@@ -1,5 +1,5 @@
-# docker build -t pepmartinez/aswh:1.4.1 .
-# docker push pepmartinez/aswh:1.4.1
+# docker build -t pepmartinez/aswh:2.0.0 .
+# docker push pepmartinez/aswh:2.0.0
 
 FROM node:20-slim as builder
 

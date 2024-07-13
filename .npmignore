@@ -1,2 +1,14 @@
-blackbox-test/node_modules
-
+.vscode/
+.nyc_output/
+.github/
+docker-compose.yaml
+npm-debug.log
+blackbox-test
+Dockerfile
+LICENSE
+README.md
+TODO
+coverage
+Screenshot_20220221_204725.png
+docker-compose.yaml
+wh-payload.json
